@@ -36,25 +36,26 @@ async def query_ai(prompt: str) -> str:
             "*(Get your 100% free key at https://aistudio.google.com)*"
         )
 
-    models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
-    last_err = ""
-    for m in models:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={gemini_key}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        return data["candidates"][0]["content"]["parts"][0]["text"]
-                    else:
-                        err_text = await resp.text()
-                        last_err = f"HTTP {resp.status}: {err_text[:200]}"
-        except Exception as e:
-            last_err = str(e)
-            continue
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
-    return f"❌ **Google Gemini Error:** `{last_err}`\n\n*Check your key or update it with `.setgemini <key>` in Telegram.*"
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=25)) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            return parts[0].get("text", "No text generated.")
+                    return "No response generated from Gemini."
+                else:
+                    err_json = await resp.json()
+                    err_msg = err_json.get("error", {}).get("message", f"HTTP {resp.status}")
+                    return f"❌ **Google Gemini Error:** `{err_msg}`\n\n*Check your key or update it with `.setgemini <key>` in Telegram.*"
+    except Exception as e:
+        return f"❌ **Network Error:** `{e}`"
 
 
 @catub.cat_cmd(
