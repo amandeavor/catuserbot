@@ -1,14 +1,88 @@
 import aiohttp
 import io
+import json
+import os
 import urllib.parse
 from userbot import catub
+from ..Config import Config
 from ..core.managers import edit_or_reply, edit_delete
 
 plugin_category = "ai"
 
 
+async def query_ai(prompt: str) -> str:
+    """Universal resilient AI query engine with multi-tier fallback."""
+    # Tier 1: Google Gemini API (if key is set in Render Env)
+    gemini_key = os.environ.get("GEMINI_API_KEY") or getattr(Config, "GEMINI_API_KEY", None)
+    if gemini_key:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
+            pass
+
+    # Tier 2: OpenAI API (if key is set in Render Env)
+    openai_key = os.environ.get("OPENAI_API_KEY") or getattr(Config, "OPENAI_API_KEY", None)
+    if openai_key:
+        try:
+            url = "https://api.openai.com/v1/chat/completions"
+            headers = {"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"}
+            payload = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]}
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        return data["choices"][0]["message"]["content"]
+        except Exception:
+            pass
+
+    # Tier 3: Free Keyless Multi-Provider Endpoints
+    free_endpoints = [
+        # Provider A: Open Text Router
+        ("https://text.pollinations.ai/openai/" + urllib.parse.quote(prompt[:300]), None, "get"),
+        # Provider B: PopCat fallback
+        ("https://api.popcat.xyz/chatbot?msg=" + urllib.parse.quote(prompt[:200]), None, "popcat"),
+        # Provider C: DuckDuckGo instant summary
+        ("https://api.duckduckgo.com/?q=" + urllib.parse.quote(prompt) + "&format=json&no_html=1&skip_disambig=1", None, "ddg"),
+    ]
+
+    async with aiohttp.ClientSession() as session:
+        for url, payload, p_type in free_endpoints:
+            try:
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+                if p_type == "get":
+                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=12)) as resp:
+                        if resp.status == 200:
+                            text = await resp.text()
+                            if len(text.strip()) > 5:
+                                return text.strip()
+                elif p_type == "popcat":
+                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            ans = data.get("response")
+                            if ans and ans != "Timed Out":
+                                return ans
+                elif p_type == "ddg":
+                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            ans = data.get("AbstractText") or data.get("Answer")
+                            if ans:
+                                return ans
+            except Exception:
+                continue
+
+    return "Could not retrieve AI response at this moment. You can also add a free `GEMINI_API_KEY` to Render Environment Variables for 100% instant Google Gemini responses!"
+
+
 @catub.cat_cmd(
-    pattern="(ai|ask|gpt)(?:\\s|$)([\\s\\S]*)",
+    pattern="(ai|ask|gpt|gemini)(?:\\s|$)([\\s\\S]*)",
     command=("ai", plugin_category),
     info={
         "header": "Ask AI anything with deep reasoning and clean formatting.",
@@ -16,7 +90,7 @@ plugin_category = "ai"
     },
 )
 async def ai_chat(event):
-    "Free AI Chat Assistant"
+    "Universal AI Chat Assistant"
     query = event.pattern_match.group(2).strip()
     reply = await event.get_reply_message()
     if not query and reply and reply.text:
@@ -25,22 +99,12 @@ async def ai_chat(event):
         return await edit_delete(event, "`Please provide a prompt or question for the AI!`", 5)
 
     catevent = await edit_or_reply(event, "`🧠 Thinking...`")
-    encoded_prompt = urllib.parse.quote(query)
-    url = f"https://text.pollinations.ai/{encoded_prompt}?model=openai&system=You+are+an+ultra-intelligent+helpful+AI+assistant.+Format+answers+concisely+with+markdown."
+    answer = await query_ai(query)
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=45)) as resp:
-                if resp.status == 200:
-                    answer = await resp.text()
-                    formatted = f"💡 **Question:** `{query}`\n\n**🤖 AI:**\n{answer}"
-                    if len(formatted) > 4096:
-                        formatted = formatted[:4090] + "..."
-                    await catevent.edit(formatted)
-                else:
-                    await catevent.edit(f"`AI Engine returned HTTP {resp.status}`")
-    except Exception as e:
-        await catevent.edit(f"**Error querying AI:** `{e}`")
+    formatted = f"💡 **Question:** `{query}`\n\n**🤖 AI:**\n{answer}"
+    if len(formatted) > 4096:
+        formatted = formatted[:4090] + "..."
+    await catevent.edit(formatted)
 
 
 @catub.cat_cmd(
@@ -141,19 +205,8 @@ async def ai_summarize(event):
 
     catevent = await edit_or_reply(event, "`📑 Summarizing...`")
     prompt = f"Summarize this text into 3-5 concise, high-impact bullet points:\n\n{text}"
-    encoded = urllib.parse.quote(prompt)
-    url = f"https://text.pollinations.ai/{encoded}?model=openai"
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status == 200:
-                    summary = await resp.text()
-                    await catevent.edit(f"📑 **Summary:**\n\n{summary}")
-                else:
-                    await catevent.edit("`Could not summarize text!`")
-    except Exception as e:
-        await catevent.edit(f"`Error: {e}`")
+    summary = await query_ai(prompt)
+    await catevent.edit(f"📑 **Summary:**\n\n{summary}")
 
 
 @catub.cat_cmd(
@@ -175,19 +228,8 @@ async def ai_grammar(event):
 
     catevent = await edit_or_reply(event, "`✍️ Polishing text...`")
     prompt = f"Fix all spelling, punctuation, and grammar mistakes in this text and make it sound natural and fluent. Output only the corrected text:\n\n{text}"
-    encoded = urllib.parse.quote(prompt)
-    url = f"https://text.pollinations.ai/{encoded}?model=openai"
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status == 200:
-                    corrected = await resp.text()
-                    await catevent.edit(f"✍️ **Corrected:**\n\n{corrected}")
-                else:
-                    await catevent.edit("`Failed to polish grammar!`")
-    except Exception as e:
-        await catevent.edit(f"`Error: {e}`")
+    corrected = await query_ai(prompt)
+    await catevent.edit(f"✍️ **Corrected:**\n\n{corrected}")
 
 
 @catub.cat_cmd(
@@ -209,16 +251,5 @@ async def ai_eli5(event):
 
     catevent = await edit_or_reply(event, f"`🍼 Explaining '{topic}' in simple terms...`")
     prompt = f"Explain '{topic}' simply and clearly as if explaining to a 5-year-old child. Use easy analogies."
-    encoded = urllib.parse.quote(prompt)
-    url = f"https://text.pollinations.ai/{encoded}?model=openai"
-
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status == 200:
-                    res = await resp.text()
-                    await catevent.edit(f"🍼 **ELI5: {topic}**\n\n{res}")
-                else:
-                    await catevent.edit("`Could not generate explanation!`")
-    except Exception as e:
-        await catevent.edit(f"`Error: {e}`")
+    res = await query_ai(prompt)
+    await catevent.edit(f"🍼 **ELI5: {topic}**\n\n{res}")
