@@ -30,6 +30,35 @@ LOGS = logging.getLogger("CatUserbot")
 LOGS.info(userbot.__copyright__)
 LOGS.info(f"Licensed under the terms of the {userbot.__license__}")
 
+import os
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/plain")
+        self.end_headers()
+        self.wfile.write(b"CatUserbot is online and healthy!")
+
+    def do_HEAD(self):
+        self.send_response(200)
+        self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+def start_health_server():
+    try:
+        port = int(os.environ.get("PORT", 8080))
+        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
+        LOGS.info(f"Render health check daemon running on port {port}")
+        server.serve_forever()
+    except Exception as e:
+        LOGS.warning(f"Could not start background health server: {e}")
+
+threading.Thread(target=start_health_server, daemon=True).start()
+
 cmdhr = Config.COMMAND_HAND_LER
 
 try:
@@ -40,29 +69,7 @@ except Exception as e:
     LOGS.error(f"{e}")
     sys.exit()
 
-
-import os
-from aiohttp import web
-
-async def health_check(request):
-    return web.Response(text="CatUserbot is online and healthy!")
-
-async def start_web_server():
-    try:
-        port = int(os.environ.get("PORT", 8080))
-        app = web.Application()
-        app.router.add_get("/", health_check)
-        app.router.add_get("/health", health_check)
-        runner = web.AppRunner(app)
-        await runner.setup()
-        site = web.TCPSite(runner, "0.0.0.0", port)
-        await site.start()
-        LOGS.info(f"Render health check server successfully started on port {port}")
-    except Exception as e:
-        LOGS.warning(f"Could not start web server on port: {e}")
-
 async def startup_process():
-    await start_web_server()
     await verifyLoggerGroup()
     await load_plugins("plugins")
     await load_plugins("assistant")
