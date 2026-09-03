@@ -41,7 +41,28 @@ except Exception as e:
     sys.exit()
 
 
+import os
+from aiohttp import web
+
+async def health_check(request):
+    return web.Response(text="CatUserbot is online and healthy!")
+
+async def start_web_server():
+    try:
+        port = int(os.environ.get("PORT", 8080))
+        app = web.Application()
+        app.router.add_get("/", health_check)
+        app.router.add_get("/health", health_check)
+        runner = web.AppRunner(app)
+        await runner.setup()
+        site = web.TCPSite(runner, "0.0.0.0", port)
+        await site.start()
+        LOGS.info(f"Render health check server successfully started on port {port}")
+    except Exception as e:
+        LOGS.warning(f"Could not start web server on port: {e}")
+
 async def startup_process():
+    await start_web_server()
     await verifyLoggerGroup()
     await load_plugins("plugins")
     await load_plugins("assistant")

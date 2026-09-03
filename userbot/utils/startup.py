@@ -231,14 +231,17 @@ async def verifyLoggerGroup():
             )
     else:
         descript = "Don't delete this group or change to group(If you change group all your previous snips, welcome will be lost.)"
-        _, groupid = await create_supergroup(
+        status, groupid = await create_supergroup(
             "CatUserbot BotLog Group", catub, Config.TG_BOT_USERNAME, descript
         )
-        addgvar("PRIVATE_GROUP_BOT_API_ID", groupid)
-        LOGS.info(
-            "Private Group for PRIVATE_GROUP_BOT_API_ID is created successfully and added to vars."
-        )
-        flag = True
+        if status != "error" and isinstance(groupid, int):
+            addgvar("PRIVATE_GROUP_BOT_API_ID", groupid)
+            LOGS.info(
+                "Private Group for PRIVATE_GROUP_BOT_API_ID is created successfully and added to vars."
+            )
+            flag = True
+        else:
+            LOGS.error(f"Failed to auto-create logger group: {groupid}")
     if PM_LOGGER_GROUP_ID != -100:
         try:
             entity = await catub.get_entity(PM_LOGGER_GROUP_ID)

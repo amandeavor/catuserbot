@@ -46,12 +46,13 @@ signal.signal(signal.SIGTERM, close_connection)
 UPSTREAM_REPO_URL = Config.UPSTREAM_REPO
 
 if Config.PRIVATE_GROUP_BOT_API_ID == 0:
-    if gvarstatus("PRIVATE_GROUP_BOT_API_ID") is None:
+    val = gvarstatus("PRIVATE_GROUP_BOT_API_ID")
+    if val is None or not str(val).lstrip("-").isdigit():
         Config.BOTLOG = False
         Config.BOTLOG_CHATID = "me"
     else:
-        Config.BOTLOG_CHATID = int(gvarstatus("PRIVATE_GROUP_BOT_API_ID"))
-        Config.PRIVATE_GROUP_BOT_API_ID = int(gvarstatus("PRIVATE_GROUP_BOT_API_ID"))
+        Config.BOTLOG_CHATID = int(val)
+        Config.PRIVATE_GROUP_BOT_API_ID = int(val)
         Config.BOTLOG = True
 else:
     if str(Config.PRIVATE_GROUP_BOT_API_ID)[0] != "-":
@@ -61,10 +62,11 @@ else:
     Config.BOTLOG = True
 
 if Config.PM_LOGGER_GROUP_ID == 0:
-    if gvarstatus("PM_LOGGER_GROUP_ID") is None:
+    pm_val = gvarstatus("PM_LOGGER_GROUP_ID")
+    if pm_val is None or not str(pm_val).lstrip("-").isdigit():
         Config.PM_LOGGER_GROUP_ID = -100
     else:
-        Config.PM_LOGGER_GROUP_ID = int(gvarstatus("PM_LOGGER_GROUP_ID"))
+        Config.PM_LOGGER_GROUP_ID = int(pm_val)
 elif str(Config.PM_LOGGER_GROUP_ID)[0] != "-":
     Config.PM_LOGGER_GROUP_ID = int(f"-{str(Config.PM_LOGGER_GROUP_ID)}")
 
