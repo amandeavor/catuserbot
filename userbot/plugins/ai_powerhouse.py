@@ -6,87 +6,93 @@ import urllib.parse
 from userbot import catub
 from ..Config import Config
 from ..core.managers import edit_or_reply, edit_delete
+from ..sql_helper.globals import addgvar, gvarstatus
 
 plugin_category = "ai"
 
 
-async def query_ai(prompt: str) -> str:
-    """Universal resilient AI query engine with multi-tier fallback."""
-    # Tier 1: Google Gemini API
-    gemini_key = os.environ.get("GEMINI_API_KEY") or getattr(Config, "GEMINI_API_KEY", None)
-    if gemini_key:
-        gemini_key = str(gemini_key).strip().strip('"').strip("'")
-        models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
-        for m in models:
-            try:
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={gemini_key}"
-                payload = {"contents": [{"parts": [{"text": prompt}]}]}
-                async with aiohttp.ClientSession() as session:
-                    async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            return data["candidates"][0]["content"]["parts"][0]["text"]
-                        elif resp.status in (400, 403):
-                            err_data = await resp.json()
-                            err_msg = err_data.get("error", {}).get("message", f"HTTP {resp.status}")
-                            return f"❌ **Google Gemini Error:** `{err_msg}`\n\n*Check your GEMINI_API_KEY in Render Environment Variables.*"
-            except Exception:
-                continue
+def get_gemini_key():
+    """Retrieve Gemini API key from database or environment variables."""
+    key = (
+        gvarstatus("GEMINI_API_KEY")
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GEMINI_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
+        or getattr(Config, "GEMINI_API_KEY", None)
+    )
+    if key:
+        return str(key).strip().strip('"').strip("'")
+    return None
 
-    # Tier 2: OpenAI API
-    openai_key = os.environ.get("OPENAI_API_KEY") or getattr(Config, "OPENAI_API_KEY", None)
-    if openai_key:
-        openai_key = str(openai_key).strip().strip('"').strip("'")
+
+async def query_ai(prompt: str) -> str:
+    """Universal resilient AI query engine with Gemini and clear error handling."""
+    gemini_key = get_gemini_key()
+    if not gemini_key:
+        return (
+            "⚠️ **Gemini API Key is not set yet.**\n\n"
+            "👉 Just send this command in Telegram:\n"
+            "`.setgemini <your_API_key>`\n\n"
+            "*(Get your 100% free key at https://aistudio.google.com)*"
+        )
+
+    models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+    last_err = ""
+    for m in models:
         try:
-            url = "https://api.openai.com/v1/chat/completions"
-            headers = {"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"}
-            payload = {"model": "gpt-4o-mini", "messages": [{"role": "user", "content": prompt}]}
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={gemini_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
             async with aiohttp.ClientSession() as session:
-                async with session.post(url, headers=headers, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        return data["choices"][0]["message"]["content"]
-        except Exception:
-            pass
+                        return data["candidates"][0]["content"]["parts"][0]["text"]
+                    else:
+                        err_text = await resp.text()
+                        last_err = f"HTTP {resp.status}: {err_text[:200]}"
+        except Exception as e:
+            last_err = str(e)
+            continue
 
-    # Tier 3: Free Keyless Multi-Provider Endpoints
-    free_endpoints = [
-        # Provider A: Open Text Router
-        ("https://text.pollinations.ai/openai/" + urllib.parse.quote(prompt[:300]), None, "get"),
-        # Provider B: PopCat fallback
-        ("https://api.popcat.xyz/chatbot?msg=" + urllib.parse.quote(prompt[:200]), None, "popcat"),
-        # Provider C: DuckDuckGo instant summary
-        ("https://api.duckduckgo.com/?q=" + urllib.parse.quote(prompt) + "&format=json&no_html=1&skip_disambig=1", None, "ddg"),
-    ]
+    return f"❌ **Google Gemini Error:** `{last_err}`\n\n*Check your key or update it with `.setgemini <key>` in Telegram.*"
 
-    async with aiohttp.ClientSession() as session:
-        for url, payload, p_type in free_endpoints:
-            try:
-                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
-                if p_type == "get":
-                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=12)) as resp:
-                        if resp.status == 200:
-                            text = await resp.text()
-                            if len(text.strip()) > 5:
-                                return text.strip()
-                elif p_type == "popcat":
-                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            ans = data.get("response")
-                            if ans and ans != "Timed Out":
-                                return ans
-                elif p_type == "ddg":
-                    async with session.get(url, headers=headers, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                        if resp.status == 200:
-                            data = await resp.json()
-                            ans = data.get("AbstractText") or data.get("Answer")
-                            if ans:
-                                return ans
-            except Exception:
-                continue
 
-    return "Could not retrieve AI response at this moment. You can also add a free `GEMINI_API_KEY` to Render Environment Variables for 100% instant Google Gemini responses!"
+@catub.cat_cmd(
+    pattern="setgemini(?:\\s|$)([\\s\\S]*)",
+    command=("setgemini", plugin_category),
+    info={
+        "header": "Set your Google Gemini API key directly from Telegram.",
+        "usage": "{tr}setgemini <your_api_key>",
+    },
+)
+async def set_gemini_key(event):
+    "Save Gemini API Key"
+    key = event.pattern_match.group(1).strip()
+    if not key:
+        return await edit_delete(event, "`Usage: .setgemini <your_api_key_from_aistudio.google.com>`", 5)
+
+    clean_key = key.strip().strip('"').strip("'")
+    addgvar("GEMINI_API_KEY", clean_key)
+    await edit_or_reply(
+        event,
+        "✅ **Google Gemini API Key has been saved successfully to your database!**\n\n"
+        "🚀 Now try asking anything: `.ai hello what can you do?`"
+    )
+
+
+@catub.cat_cmd(
+    pattern="checkgemini$",
+    command=("checkgemini", plugin_category),
+    info={"header": "Check if Gemini API Key is configured.", "usage": "{tr}checkgemini"},
+)
+async def check_gemini_key(event):
+    "Check Gemini API Status"
+    key = get_gemini_key()
+    if key:
+        masked = key[:6] + "..." + key[-4:] if len(key) > 10 else "***"
+        await edit_or_reply(event, f"🟢 **Gemini API Key is ACTIVE:** `{masked}`")
+    else:
+        await edit_or_reply(event, "🔴 **No Gemini API Key found.**\nSet it using: `.setgemini <key>`")
 
 
 @catub.cat_cmd(
