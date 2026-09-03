@@ -12,23 +12,31 @@ plugin_category = "ai"
 
 async def query_ai(prompt: str) -> str:
     """Universal resilient AI query engine with multi-tier fallback."""
-    # Tier 1: Google Gemini API (if key is set in Render Env)
+    # Tier 1: Google Gemini API
     gemini_key = os.environ.get("GEMINI_API_KEY") or getattr(Config, "GEMINI_API_KEY", None)
     if gemini_key:
-        try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
-            payload = {"contents": [{"parts": [{"text": prompt}]}]}
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        return data["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception:
-            pass
+        gemini_key = str(gemini_key).strip().strip('"').strip("'")
+        models = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"]
+        for m in models:
+            try:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{m}:generateContent?key={gemini_key}"
+                payload = {"contents": [{"parts": [{"text": prompt}]}]}
+                async with aiohttp.ClientSession() as session:
+                    async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                        if resp.status == 200:
+                            data = await resp.json()
+                            return data["candidates"][0]["content"]["parts"][0]["text"]
+                        elif resp.status in (400, 403):
+                            err_data = await resp.json()
+                            err_msg = err_data.get("error", {}).get("message", f"HTTP {resp.status}")
+                            return f"❌ **Google Gemini Error:** `{err_msg}`\n\n*Check your GEMINI_API_KEY in Render Environment Variables.*"
+            except Exception:
+                continue
 
-    # Tier 2: OpenAI API (if key is set in Render Env)
+    # Tier 2: OpenAI API
     openai_key = os.environ.get("OPENAI_API_KEY") or getattr(Config, "OPENAI_API_KEY", None)
     if openai_key:
+        openai_key = str(openai_key).strip().strip('"').strip("'")
         try:
             url = "https://api.openai.com/v1/chat/completions"
             headers = {"Authorization": f"Bearer {openai_key}", "Content-Type": "application/json"}
