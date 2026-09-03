@@ -187,26 +187,38 @@ async def web_screenshot(event):
 
     catevent = await edit_or_reply(event, f"`📸 Capturing screenshot of {url}...`")
     encoded = urllib.parse.quote(url)
-    ss_api = f"https://image.thum.io/get/width/1280/crop/800/noanimate/{url}"
+    
+    # Provider 1: Microlink API, Provider 2: thum.io, Provider 3: s-shot
+    providers = [
+        f"https://api.microlink.io/?url={encoded}&screenshot=true&meta=false&embed=screenshot.url",
+        f"https://image.thum.io/get/width/1280/crop/800/noanimate/{url}",
+        f"https://mini.s-shot.ru/1280x800/PNG/1280/Z100/?{url}",
+    ]
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(ss_api, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status == 200:
-                    img_bytes = await resp.read()
-                    file_obj = io.BytesIO(img_bytes)
-                    file_obj.name = "screenshot.png"
-                    await catevent.delete()
-                    await event.client.send_file(
-                        event.chat_id,
-                        file_obj,
-                        caption=f"📸 **Website Screenshot:**\n🔗 `{url}`",
-                        reply_to=reply.id if reply else None,
-                    )
-                else:
-                    await catevent.edit("`Could not capture screenshot of this site!`")
-    except Exception as e:
-        await catevent.edit(f"`Screenshot error: {e}`")
+    img_bytes = None
+    async with aiohttp.ClientSession() as session:
+        for p_url in providers:
+            try:
+                async with session.get(p_url, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    if resp.status == 200 and "image" in resp.headers.get("Content-Type", ""):
+                        img_bytes = await resp.read()
+                        if len(img_bytes) > 5000:
+                            break
+            except Exception:
+                continue
+
+    if img_bytes:
+        file_obj = io.BytesIO(img_bytes)
+        file_obj.name = "screenshot.png"
+        await catevent.delete()
+        await event.client.send_file(
+            event.chat_id,
+            file_obj,
+            caption=f"📸 **Website Screenshot:**\n🔗 `{url}`",
+            reply_to=reply.id if reply else None,
+        )
+    else:
+        await catevent.edit("`Could not capture screenshot of this site!`")
 
 
 @catub.cat_cmd(
