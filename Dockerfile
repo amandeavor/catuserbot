@@ -18,6 +18,9 @@ ENV TZ=Asia/Kolkata
 ## Copy files into the Docker image
 COPY . .
 
+# Update critical packages (yt-dlp, aiohttp, httpx) to current versions
+RUN pip3 install --no-cache-dir -U yt-dlp aiohttp requests httpx pillow
+
 ENV PATH="/home/userbot/bin:$PATH"
 
 CMD ["python3","-m","userbot"]
