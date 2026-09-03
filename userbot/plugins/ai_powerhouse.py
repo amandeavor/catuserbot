@@ -60,6 +60,28 @@ async def get_valid_gemini_models(gemini_key: str):
     ]
 
 
+def extract_gemini_text(data: dict) -> str:
+    """Extract clean final response from Gemini candidate parts, skipping internal CoT thoughts."""
+    candidates = data.get("candidates", [])
+    if not candidates:
+        return "No response generated from Gemini."
+    parts = candidates[0].get("content", {}).get("parts", [])
+    if not parts:
+        return "No text parts generated."
+
+    # Filter out internal reasoning/thought scratchpad parts
+    final_texts = [
+        p.get("text", "")
+        for p in parts
+        if not p.get("thought", False) and p.get("text")
+    ]
+    if final_texts:
+        return "".join(final_texts).strip()
+
+    # Fallback: if all parts had thought or single part, return the last part
+    return parts[-1].get("text", "").strip()
+
+
 async def query_ai(prompt: str) -> str:
     """Universal resilient AI query engine with auto-healing model selector."""
     gemini_key = get_gemini_key()
@@ -82,11 +104,7 @@ async def query_ai(prompt: str) -> str:
                 async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        candidates = data.get("candidates", [])
-                        if candidates:
-                            parts = candidates[0].get("content", {}).get("parts", [])
-                            if parts:
-                                return parts[0].get("text", "No text generated.")
+                        return extract_gemini_text(data)
                     else:
                         err_json = await resp.json()
                         err_msg = err_json.get("error", {}).get("message", f"HTTP {resp.status}")
@@ -101,11 +119,7 @@ async def query_ai(prompt: str) -> str:
                                 async with session.post(rec_url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as rec_resp:
                                     if rec_resp.status == 200:
                                         rec_data = await rec_resp.json()
-                                        rec_candidates = rec_data.get("candidates", [])
-                                        if rec_candidates:
-                                            parts = rec_candidates[0].get("content", {}).get("parts", [])
-                                            if parts:
-                                                return parts[0].get("text", "No text generated.")
+                                        return extract_gemini_text(rec_data)
             except Exception as e:
                 last_err = str(e)
                 continue
