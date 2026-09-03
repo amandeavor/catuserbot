@@ -25,8 +25,42 @@ def get_gemini_key():
     return None
 
 
+ACTIVE_GEMINI_MODEL = None
+
+
+async def discover_gemini_model(gemini_key: str):
+    """Dynamically discover available models from Google's ModelService."""
+    global ACTIVE_GEMINI_MODEL
+    if ACTIVE_GEMINI_MODEL:
+        return ACTIVE_GEMINI_MODEL
+
+    for ver in ["v1beta", "v1"]:
+        try:
+            url = f"https://generativelanguage.googleapis.com/{ver}/models?key={gemini_key}"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        models = data.get("models", [])
+                        valid_models = [
+                            m["name"]
+                            for m in models
+                            if "generateContent" in m.get("supportedGenerationMethods", [])
+                        ]
+                        if valid_models:
+                            # Prefer flash if available, else first valid model
+                            best_model = next((m for m in valid_models if "flash" in m.lower()), valid_models[0])
+                            ACTIVE_GEMINI_MODEL = (ver, best_model)
+                            return ACTIVE_GEMINI_MODEL
+        except Exception:
+            continue
+
+    ACTIVE_GEMINI_MODEL = ("v1beta", "models/gemini-1.5-flash-latest")
+    return ACTIVE_GEMINI_MODEL
+
+
 async def query_ai(prompt: str) -> str:
-    """Universal resilient AI query engine with Gemini and clear error handling."""
+    """Universal resilient AI query engine with dynamic Google ModelService resolution."""
     gemini_key = get_gemini_key()
     if not gemini_key:
         return (
@@ -36,7 +70,9 @@ async def query_ai(prompt: str) -> str:
             "*(Get your 100% free key at https://aistudio.google.com)*"
         )
 
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+    ver, full_model_name = await discover_gemini_model(gemini_key)
+    clean_model_name = full_model_name.replace("models/", "")
+    url = f"https://generativelanguage.googleapis.com/{ver}/models/{clean_model_name}:generateContent?key={gemini_key}"
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     try:
