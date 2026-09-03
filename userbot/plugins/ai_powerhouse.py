@@ -25,15 +25,13 @@ def get_gemini_key():
     return None
 
 
+import re
+
 ACTIVE_GEMINI_MODEL = None
 
 
-async def discover_gemini_model(gemini_key: str):
-    """Dynamically discover available models from Google's ModelService."""
-    global ACTIVE_GEMINI_MODEL
-    if ACTIVE_GEMINI_MODEL:
-        return ACTIVE_GEMINI_MODEL
-
+async def get_valid_gemini_models(gemini_key: str):
+    """Retrieve list of supported models from Google ModelService in priority order."""
     for ver in ["v1beta", "v1"]:
         try:
             url = f"https://generativelanguage.googleapis.com/{ver}/models?key={gemini_key}"
@@ -42,25 +40,28 @@ async def discover_gemini_model(gemini_key: str):
                     if resp.status == 200:
                         data = await resp.json()
                         models = data.get("models", [])
-                        valid_models = [
-                            m["name"]
+                        valid = [
+                            (ver, m["name"].replace("models/", ""))
                             for m in models
                             if "generateContent" in m.get("supportedGenerationMethods", [])
                         ]
-                        if valid_models:
-                            # Prefer flash if available, else first valid model
-                            best_model = next((m for m in valid_models if "flash" in m.lower()), valid_models[0])
-                            ACTIVE_GEMINI_MODEL = (ver, best_model)
-                            return ACTIVE_GEMINI_MODEL
+                        if valid:
+                            # Sort by reverse version name (newest first, e.g. 3.6-flash, 2.0-flash, 1.5-flash)
+                            valid.sort(key=lambda x: x[1], reverse=True)
+                            return valid
         except Exception:
             continue
 
-    ACTIVE_GEMINI_MODEL = ("v1beta", "models/gemini-1.5-flash-latest")
-    return ACTIVE_GEMINI_MODEL
+    return [
+        ("v1beta", "gemini-3.6-flash"),
+        ("v1beta", "gemini-2.0-flash"),
+        ("v1beta", "gemini-1.5-flash-latest"),
+        ("v1beta", "gemini-1.5-flash"),
+    ]
 
 
 async def query_ai(prompt: str) -> str:
-    """Universal resilient AI query engine with dynamic Google ModelService resolution."""
+    """Universal resilient AI query engine with auto-healing model selector."""
     gemini_key = get_gemini_key()
     if not gemini_key:
         return (
@@ -70,28 +71,46 @@ async def query_ai(prompt: str) -> str:
             "*(Get your 100% free key at https://aistudio.google.com)*"
         )
 
-    ver, full_model_name = await discover_gemini_model(gemini_key)
-    clean_model_name = full_model_name.replace("models/", "")
-    url = f"https://generativelanguage.googleapis.com/{ver}/models/{clean_model_name}:generateContent?key={gemini_key}"
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+    valid_models = await get_valid_gemini_models(gemini_key)
+    last_err = ""
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=25)) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            return parts[0].get("text", "No text generated.")
-                    return "No response generated from Gemini."
-                else:
-                    err_json = await resp.json()
-                    err_msg = err_json.get("error", {}).get("message", f"HTTP {resp.status}")
-                    return f"❌ **Google Gemini Error:** `{err_msg}`\n\n*Check your key or update it with `.setgemini <key>` in Telegram.*"
-    except Exception as e:
-        return f"❌ **Network Error:** `{e}`"
+    async with aiohttp.ClientSession() as session:
+        for ver, model_name in valid_models:
+            url = f"https://generativelanguage.googleapis.com/{ver}/models/{model_name}:generateContent?key={gemini_key}"
+            payload = {"contents": [{"parts": [{"text": prompt}]}]}
+            try:
+                async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        candidates = data.get("candidates", [])
+                        if candidates:
+                            parts = candidates[0].get("content", {}).get("parts", [])
+                            if parts:
+                                return parts[0].get("text", "No text generated.")
+                    else:
+                        err_json = await resp.json()
+                        err_msg = err_json.get("error", {}).get("message", f"HTTP {resp.status}")
+                        last_err = err_msg
+
+                        # If Google tells us to use a specific model, try it right away
+                        match = re.search(r"models/([a-zA-Z0-9\.\-]+)", err_msg)
+                        if match:
+                            rec_model = match.group(1)
+                            if rec_model != model_name:
+                                rec_url = f"https://generativelanguage.googleapis.com/{ver}/models/{rec_model}:generateContent?key={gemini_key}"
+                                async with session.post(rec_url, json=payload, timeout=aiohttp.ClientTimeout(total=20)) as rec_resp:
+                                    if rec_resp.status == 200:
+                                        rec_data = await rec_resp.json()
+                                        rec_candidates = rec_data.get("candidates", [])
+                                        if rec_candidates:
+                                            parts = rec_candidates[0].get("content", {}).get("parts", [])
+                                            if parts:
+                                                return parts[0].get("text", "No text generated.")
+            except Exception as e:
+                last_err = str(e)
+                continue
+
+    return f"❌ **Google Gemini Error:** `{last_err}`\n\n*Update your key with `.setgemini <key>` in Telegram.*"
 
 
 @catub.cat_cmd(
