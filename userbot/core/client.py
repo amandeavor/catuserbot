@@ -123,8 +123,10 @@ class CatUserBotClient(TelegramClient):
             ):
                 REGEX_.regex1 = REGEX_.regex2 = re.compile(pattern)
             else:
-                reg1 = "\\" + Config.COMMAND_HAND_LER
-                reg2 = "\\" + Config.SUDO_COMMAND_HAND_LER
+                p1 = re.escape(str(Config.COMMAND_HAND_LER or ".").lstrip("\\"))
+                reg1 = f"^(?:{p1}|/|!)"
+                p2 = re.escape(str(Config.SUDO_COMMAND_HAND_LER or ".").lstrip("\\"))
+                reg2 = f"^(?:{p2}|/|!)"
                 REGEX_.regex1 = re.compile(reg1 + pattern)
                 REGEX_.regex2 = re.compile(reg2 + pattern)
 

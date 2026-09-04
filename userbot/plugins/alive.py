@@ -31,7 +31,7 @@ plugin_category = "utils"
 
 
 @catub.cat_cmd(
-    pattern="alive$",
+    pattern="alive(?: |$)",
     command=("alive", plugin_category),
     info={
         "header": "To check Aetheris bot's alive status",
@@ -61,7 +61,7 @@ async def amireallyalive(event):
     EMOJI = gvarstatus("ALIVE_EMOJI") or "▸"
     ALIVE_TEXT = gvarstatus("ALIVE_TEXT") or "◈ ─── ❖ **[ A E T H E R I S  C O R E ]** ❖ ─── ◈"
     CAT_IMG = gvarstatus("ALIVE_PIC")
-    caption = cat_caption.format(
+    format_kwargs = dict(
         ALIVE_TEXT=ALIVE_TEXT,
         ANIME=ANIME,
         EMOJI=EMOJI,
@@ -73,6 +73,10 @@ async def amireallyalive(event):
         dbhealth=check_sgnirts,
         ping=ms,
     )
+    try:
+        caption = cat_caption.format(**format_kwargs)
+    except Exception:
+        caption = temp.format(**format_kwargs)
     if CAT_IMG:
         CAT = list(CAT_IMG.split())
         PIC = random.choice(CAT)
