@@ -448,4 +448,9 @@ async def _(event):  # sourcery no-metrics
     await edit_or_reply(event, finalstr, aslink=True, linktext=text)
 
 
-catub.loop.create_task(_init())
+if hasattr(catub, "loop") and catub.loop and catub.loop.is_running():
+    catub.loop.create_task(_init())
+
+
+async def on_load(ctx=None):
+    await _init()

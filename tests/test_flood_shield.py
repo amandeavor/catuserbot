@@ -105,3 +105,42 @@ async def test_flood_shield_rpc_families_scheduling():
     # P2_NORMAL (Messages / Interactive)
     res_msg = await shield.execute(dummy_rpc, "send_msg", lane=RPCLane.P2_NORMAL)
     assert res_msg == "handled_send_msg"
+
+
+def test_is_maintenance_request_classification():
+    from userbot.core.flood_shield import is_maintenance_request
+
+    maintenance_classes = [
+        "PingRequest",
+        "PingDelayDisconnectRequest",
+        "GetStateRequest",
+        "InitConnectionRequest",
+        "InvokeWithLayerRequest",
+        "DestroySessionRequest",
+        "GetDifferenceRequest",
+        "GetConfigRequest",
+        "GetNearestDcRequest",
+        "GetFutureSaltsRequest",
+        "MsgsAck",
+        "HttpWait",
+    ]
+
+    for cls_name in maintenance_classes:
+        mock_rpc = type(cls_name, (), {})()
+        assert is_maintenance_request(mock_rpc) is True, f"Failed to classify {cls_name} as maintenance"
+
+    non_maintenance = [
+        "SendMessageRequest",
+        "EditMessageRequest",
+        "DeleteMessagesRequest",
+        "GetHistoryRequest",
+        "GetFileRequest",
+        "SaveFilePartRequest",
+        "UploadMediaRequest",
+    ]
+
+    for cls_name in non_maintenance:
+        mock_rpc = type(cls_name, (), {})()
+        assert is_maintenance_request(mock_rpc) is False, f"Erroneously classified {cls_name} as maintenance"
+
+    assert is_maintenance_request(None) is False

@@ -70,9 +70,17 @@ class JobRecord:
 class CancellationToken:
     """Cooperative cancellation token for background jobs."""
 
-    def __init__(self, record: JobRecord, parent_token: Optional["CancellationToken"] = None):
+    def __init__(self, record: Optional[JobRecord] = None, parent_token: Optional["CancellationToken"] = None):
+        if record is None:
+            record = JobRecord(job_id="standalone", name="standalone")
+            record.pause_event.set()
         self._record = record
         self._parent = parent_token
+
+    def cancel(self) -> None:
+        """Signal cancellation cooperatively."""
+        self._record.cancel_event.set()
+        self._record.status = JobState.CANCELLED
 
     @property
     def is_cancelled(self) -> bool:
@@ -105,15 +113,27 @@ class JobSupervisor:
     def __init__(self, max_concurrent: int = 10, max_concurrency: Optional[int] = None):
         self.max_concurrent = max_concurrency if max_concurrency is not None else max_concurrent
         self._jobs: Dict[str, JobRecord] = {}
-        self._queue: asyncio.PriorityQueue = asyncio.PriorityQueue()
+        self._queue: Optional[asyncio.PriorityQueue] = None
         self._workers: List[asyncio.Task] = []
         self._running = False
-        self._lock = asyncio.Lock()
+        self._lock: Optional[asyncio.Lock] = None
 
     async def start(self) -> None:
         if self._running:
             return
         self._running = True
+        existing_items = []
+        if self._queue is not None:
+            while not self._queue.empty():
+                try:
+                    existing_items.append(self._queue.get_nowait())
+                except asyncio.QueueEmpty:
+                    break
+        self._queue = asyncio.PriorityQueue()
+        for item in existing_items:
+            self._queue.put_nowait(item)
+        self._lock = asyncio.Lock()
+        self._workers.clear()
         for i in range(self.max_concurrent):
             worker = asyncio.create_task(self._worker_loop(i))
             self._workers.append(worker)
@@ -128,6 +148,7 @@ class JobSupervisor:
         for w in self._workers:
             w.cancel()
         self._workers.clear()
+        self._queue = None
         LOGS.info("JobSupervisor stopped")
 
     async def submit(
@@ -155,6 +176,8 @@ class JobSupervisor:
         )
         record.pause_event.set()  # Not paused by default
         self._jobs[job_id] = record
+        if self._queue is None:
+            self._queue = asyncio.PriorityQueue()
         self._queue.put_nowait((int(priority), record.created_at, job_id))
         LOGS.debug("Submitted job %s [%s] (priority: %s)", job_id, name, priority.name)
         return record

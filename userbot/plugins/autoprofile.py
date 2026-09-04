@@ -17,13 +17,24 @@ import shutil
 import time
 import urllib
 from datetime import datetime
+from typing import Optional
 
 import requests
 from PIL import Image, ImageDraw, ImageFont
-from pySmartDL import SmartDL
+try:
+    from pySmartDL import SmartDL
+except ImportError:
+    SmartDL = None
+
 from telethon.errors import FloodWaitError
 from telethon.tl import functions
-from urlextract import URLExtract
+
+try:
+    from urlextract import URLExtract
+except ImportError:
+    URLExtract = None
+
+from userbot.core.jobs import CancellationToken, JobPriority, job_supervisor
 
 from ..Config import Config
 from ..helpers.utils import _format
@@ -66,14 +77,35 @@ def fetch_data():
     global DEFAULTUSERBIO, DEFAULTUSER, CHANGE_TIME, DEFAULT_PIC, digitalpfp
     DEFAULTUSERBIO = gvarstatus("DEFAULT_BIO") or " ᗯᗩᏆᎢᏆᑎᏀ ᏞᏆᏦᗴ ᎢᏆᗰᗴ  "
     DEFAULTUSER = gvarstatus("DEFAULT_NAME") or Config.ALIVE_NAME
-    CHANGE_TIME = int(gvarstatus("CHANGE_TIME") or "60")
+    try:
+        CHANGE_TIME = int(gvarstatus("CHANGE_TIME") or "60")
+    except (ValueError, TypeError):
+        CHANGE_TIME = 60
     DEFAULT_PIC = gvarstatus("DEFAULT_PIC") or None
     digitalpfp = (
         gvarstatus("DIGITAL_PIC") or "https://graph.org/file/aeaebe33b1f3988a0b690.jpg"
     )
 
 
-async def autopicloop():
+async def start_profile_job(job_name: str, coro_fn):
+    """Start or restart a background job supervised under JobSupervisor."""
+    await stop_profile_job(job_name)
+    return await job_supervisor.submit(
+        job_name,
+        coro_fn,
+        plugin_id="autoprofile",
+        priority=JobPriority.BACKGROUND,
+    )
+
+
+async def stop_profile_job(job_name: str):
+    """Cancel an active profile job by name."""
+    for j in job_supervisor.list_jobs(active_only=True):
+        if j.plugin_id == "autoprofile" and j.name == job_name:
+            await job_supervisor.cancel_job(j.job_id)
+
+
+async def autopicloop(token: Optional[CancellationToken] = None):
     fetch_data()
     AUTOPICSTART = gvarstatus("autopic") == "true"
     if AUTOPICSTART and DEFAULT_PIC is None:
@@ -83,17 +115,20 @@ async def autopicloop():
                 "**Error**\n`For functing of autopic you need to set DEFAULT_PIC var in Database vars`",
             )
         return
+    counter = 30
     if gvarstatus("autopic") is not None:
         try:
             counter = int(gvarstatus("autopic_counter"))
         except Exception as e:
-            LOGS.warn(str(e))
-    while AUTOPICSTART:
+            LOGS.warning(str(e))
+    while AUTOPICSTART and (token is None or not token.is_cancelled):
         if not os.path.exists(autopic_path):
             downloader = SmartDL(DEFAULT_PIC, autopic_path, progress_bar=False)
             downloader.start(blocking=False)
             while not downloader.isFinished():
-                pass
+                if token and token.is_cancelled:
+                    return
+                await asyncio.sleep(0.1)
         shutil.copy(autopic_path, autophoto_path)
         im = Image.open(autophoto_path)
         file_test = im.rotate(counter, expand=False).save(autophoto_path, "PNG")
@@ -106,23 +141,30 @@ async def autopicloop():
         file = await catub.upload_file(autophoto_path)
         try:
             await catub(functions.photos.UploadProfilePhotoRequest(file))
-            os.remove(autophoto_path)
+            if os.path.exists(autophoto_path):
+                os.remove(autophoto_path)
             counter += counter
-            await asyncio.sleep(CHANGE_TIME)
+            if token:
+                await token.sleep(CHANGE_TIME)
+            else:
+                await asyncio.sleep(CHANGE_TIME)
+        except asyncio.CancelledError:
+            break
         except BaseException:
             return
         AUTOPICSTART = gvarstatus("autopic") == "true"
 
 
-async def custompfploop():
+async def custompfploop(token: Optional[CancellationToken] = None):
     fetch_data()
     CUSTOMPICSTART = gvarstatus("CUSTOM_PFP") == "true"
     i = 0
-    while CUSTOMPICSTART:
-        if len(get_collection_list("CUSTOM_PFP_LINKS")) == 0:
+    while CUSTOMPICSTART and (token is None or not token.is_cancelled):
+        collection = get_collection_list("CUSTOM_PFP_LINKS")
+        if len(collection) == 0:
             LOGS.error("No custom pfp images to set.")
             return
-        pic = random.choice(list(get_collection_list("CUSTOM_PFP_LINKS")))
+        pic = random.choice(list(collection))
         urllib.request.urlretrieve(pic, "donottouch.jpg")
         file = await catub.upload_file("donottouch.jpg")
         try:
@@ -134,23 +176,31 @@ async def custompfploop():
                 )
             i += 1
             await catub(functions.photos.UploadProfilePhotoRequest(file))
-            os.remove("donottouch.jpg")
-            await asyncio.sleep(CHANGE_TIME)
+            if os.path.exists("donottouch.jpg"):
+                os.remove("donottouch.jpg")
+            if token:
+                await token.sleep(CHANGE_TIME)
+            else:
+                await asyncio.sleep(CHANGE_TIME)
+        except asyncio.CancelledError:
+            break
         except BaseException:
             return
         CUSTOMPICSTART = gvarstatus("CUSTOM_PFP") == "true"
 
 
-async def digitalpicloop():
+async def digitalpicloop(token: Optional[CancellationToken] = None):
     fetch_data()
     DIGITALPICSTART = gvarstatus("digitalpic") == "true"
     i = 0
-    while DIGITALPICSTART:
+    while DIGITALPICSTART and (token is None or not token.is_cancelled):
         if not os.path.exists(digitalpic_path):
             downloader = SmartDL(digitalpfp, digitalpic_path, progress_bar=False)
             downloader.start(blocking=False)
             while not downloader.isFinished():
-                pass
+                if token and token.is_cancelled:
+                    return
+                await asyncio.sleep(0.1)
         shutil.copy(digitalpic_path, autophoto_path)
         Image.open(autophoto_path)
         current_time = datetime.now().strftime("%H:%M")
@@ -172,14 +222,20 @@ async def digitalpicloop():
                 )
             i += 1
             await catub(functions.photos.UploadProfilePhotoRequest(file))
-            os.remove(autophoto_path)
-            await asyncio.sleep(60)
+            if os.path.exists(autophoto_path):
+                os.remove(autophoto_path)
+            if token:
+                await token.sleep(60)
+            else:
+                await asyncio.sleep(60)
+        except asyncio.CancelledError:
+            break
         except BaseException:
             return
         DIGITALPICSTART = gvarstatus("digitalpic") == "true"
 
 
-async def bloom_pfploop():
+async def bloom_pfploop(token: Optional[CancellationToken] = None):
     fetch_data()
     BLOOMSTART = gvarstatus("bloom") == "true"
     if BLOOMSTART and DEFAULT_PIC is None:
@@ -189,12 +245,14 @@ async def bloom_pfploop():
                 "**Error**\n`For functing of bloom you need to set DEFAULT_PIC var in Database vars`",
             )
         return
-    while BLOOMSTART:
+    while BLOOMSTART and (token is None or not token.is_cancelled):
         if not os.path.exists(autopic_path):
             downloader = SmartDL(DEFAULT_PIC, autopic_path, progress_bar=False)
             downloader.start(blocking=False)
             while not downloader.isFinished():
-                pass
+                if token and token.is_cancelled:
+                    return
+                await asyncio.sleep(0.1)
         # RIP Danger zone Here no editing here plox
         R = random.randint(0, 256)
         B = random.randint(0, 256)
@@ -217,16 +275,22 @@ async def bloom_pfploop():
         file = await catub.upload_file(autophoto_path)
         try:
             await catub(functions.photos.UploadProfilePhotoRequest(file))
-            os.remove(autophoto_path)
-            await asyncio.sleep(CHANGE_TIME)
+            if os.path.exists(autophoto_path):
+                os.remove(autophoto_path)
+            if token:
+                await token.sleep(CHANGE_TIME)
+            else:
+                await asyncio.sleep(CHANGE_TIME)
+        except asyncio.CancelledError:
+            break
         except BaseException:
             return
         BLOOMSTART = gvarstatus("bloom") == "true"
 
 
-async def autoname_loop():
+async def autoname_loop(token: Optional[CancellationToken] = None):
     fetch_data()
-    while AUTONAMESTART := gvarstatus("autoname") == "true":
+    while (token is None or not token.is_cancelled) and gvarstatus("autoname") == "true":
         DM = time.strftime("%d-%m-%y")
         HM = time.strftime("%H:%M")
         name = f"⌚️ {HM}||›  {DEFAULTUSER} ‹||📅 {DM}"
@@ -235,13 +299,23 @@ async def autoname_loop():
             await catub(functions.account.UpdateProfileRequest(first_name=name))
         except FloodWaitError as ex:
             LOGS.warning(str(ex))
-            await asyncio.sleep(ex.seconds)
-        await asyncio.sleep(CHANGE_TIME)
+            if token:
+                await token.sleep(ex.seconds)
+            else:
+                await asyncio.sleep(ex.seconds)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            LOGS.warning("autoname error: %s", e)
+        if token:
+            await token.sleep(CHANGE_TIME)
+        else:
+            await asyncio.sleep(CHANGE_TIME)
 
 
-async def autobio_loop():
+async def autobio_loop(token: Optional[CancellationToken] = None):
     fetch_data()
-    while AUTOBIOSTART := gvarstatus("autobio") == "true":
+    while (token is None or not token.is_cancelled) and gvarstatus("autobio") == "true":
         DMY = time.strftime("%d.%m.%Y")
         HM = time.strftime("%H:%M")
         bio = f"📅 {DMY} | {DEFAULTUSERBIO} | ⌚️ {HM}"
@@ -250,8 +324,18 @@ async def autobio_loop():
             await catub(functions.account.UpdateProfileRequest(about=bio))
         except FloodWaitError as ex:
             LOGS.warning(str(ex))
-            await asyncio.sleep(ex.seconds)
-        await asyncio.sleep(CHANGE_TIME)
+            if token:
+                await token.sleep(ex.seconds)
+            else:
+                await asyncio.sleep(ex.seconds)
+        except asyncio.CancelledError:
+            break
+        except Exception as e:
+            LOGS.warning("autobio error: %s", e)
+        if token:
+            await token.sleep(CHANGE_TIME)
+        else:
+            await asyncio.sleep(CHANGE_TIME)
 
 
 async def animeprofilepic(collection_images):
@@ -272,15 +356,18 @@ async def animeprofilepic(collection_images):
     return "donottouch.jpg"
 
 
-async def autopfp_start():
+async def autopfp_start(token: Optional[CancellationToken] = None):
     fetch_data()
     if gvarstatus("autopfp_strings") is not None:
         AUTOPFP_START = True
-        string_list = COLLECTION_STRINGS[gvarstatus("autopfp_strings")]
+        string_list = COLLECTION_STRINGS.get(gvarstatus("autopfp_strings"), [])
     else:
         AUTOPFP_START = False
+        string_list = []
     i = 0
-    while AUTOPFP_START:
+    while AUTOPFP_START and (token is None or not token.is_cancelled):
+        if not string_list:
+            break
         await animeprofilepic(string_list)
         file = await catub.upload_file("donottouch.jpg")
         if i > 0:
@@ -291,8 +378,12 @@ async def autopfp_start():
             )
         i += 1
         await catub(functions.photos.UploadProfilePhotoRequest(file))
-        await _catutils.runcmd("rm -rf donottouch.jpg")
-        await asyncio.sleep(CHANGE_TIME)
+        if os.path.exists("donottouch.jpg"):
+            await _catutils.runcmd("rm -rf donottouch.jpg")
+        if token:
+            await token.sleep(CHANGE_TIME)
+        else:
+            await asyncio.sleep(CHANGE_TIME)
         AUTOPFP_START = gvarstatus("autopfp_strings") is not None
 
 
@@ -313,8 +404,8 @@ async def _(event):
         pfp_string = gvarstatus("autopfp_strings")[:-8]
         return await edit_delete(event, f"`{pfp_string} is already running.`")
     addgvar("autopfp_strings", "batmanpfp_strings")
-    await event.edit("`Starting batman Profile Pic.`")
-    await autopfp_start()
+    await edit_delete(event, "`Starting batman Profile Pic.`")
+    await start_profile_job("autoprofile_pfp", autopfp_start)
 
 
 @catub.cat_cmd(
@@ -334,12 +425,12 @@ async def _(event):
         pfp_string = gvarstatus("autopfp_strings")[:-8]
         return await edit_delete(event, f"`{pfp_string} is already running.`")
     addgvar("autopfp_strings", "thorpfp_strings")
-    await event.edit("`Starting thor Profile Pic.`")
-    await autopfp_start()
+    await edit_delete(event, "`Starting thor Profile Pic.`")
+    await start_profile_job("autoprofile_pfp", autopfp_start)
 
 
 @catub.cat_cmd(
-    pattern="autopic ?([\s\S]*)",
+    pattern=r"autopic ?([\s\S]*)",
     command=("autopic", plugin_category),
     info={
         "header": "Changes profile pic every 1 minute with the custom pic with time",
@@ -382,7 +473,7 @@ async def _(event):
     if input_str:
         addgvar("autopic_counter", input_str)
     await edit_delete(event, "`Autopic has been started by my Master`")
-    await autopicloop()
+    await start_profile_job("autoprofile_autopic", autopicloop)
 
 
 @catub.cat_cmd(
@@ -406,7 +497,7 @@ async def _(event):
         return await edit_delete(event, "`Digitalpic is already enabled`")
     addgvar("digitalpic", True)
     await edit_delete(event, "`digitalpfp has been started by my Master`")
-    await digitalpicloop()
+    await start_profile_job("autoprofile_digitalpic", digitalpicloop)
 
 
 @catub.cat_cmd(
@@ -438,11 +529,11 @@ async def _(event):
         return await edit_delete(event, "`Bloom is already enabled`")
     addgvar("bloom", True)
     await edit_delete(event, "`Bloom has been started by my Master`")
-    await bloom_pfploop()
+    await start_profile_job("autoprofile_bloom", bloom_pfploop)
 
 
 @catub.cat_cmd(
-    pattern="c(ustom)?pfp(?: |$)([\s\S]*)",
+    pattern=r"c(ustom)?pfp(?: |$)([\s\S]*)",
     command=("custompfp", plugin_category),
     info={
         "header": "Set Your Custom pfps",
@@ -476,7 +567,7 @@ async def useless(event):  # sourcery no-metrics
             return await edit_delete(event, "**ಠ∀ಠ  There no links for custom pfp...**")
         addgvar("CUSTOM_PFP", True)
         await edit_delete(event, "`Starting custom pfp....`")
-        await custompfploop()
+        await start_profile_job("autoprofile_custompfp", custompfploop)
         return
     if flag == "l":
         if not list_link:
@@ -491,6 +582,7 @@ async def useless(event):  # sourcery no-metrics
     if flag == "s":
         if gvarstatus("CUSTOM_PFP") is not None and gvarstatus("CUSTOM_PFP") == "true":
             delgvar("CUSTOM_PFP")
+            await stop_profile_job("autoprofile_custompfp")
             await event.client(
                 functions.photos.DeletePhotosRequest(
                     await event.client.get_profile_photos("me", limit=1)
@@ -543,7 +635,7 @@ async def _(event):
         return await edit_delete(event, "`Autoname is already enabled`")
     addgvar("autoname", True)
     await edit_delete(event, "`AutoName has been started by my Master `")
-    await autoname_loop()
+    await start_profile_job("autoprofile_autoname", autoname_loop)
 
 
 @catub.cat_cmd(
@@ -562,11 +654,11 @@ async def _(event):
         return await edit_delete(event, "`Autobio is already enabled`")
     addgvar("autobio", True)
     await edit_delete(event, "`Autobio has been started by my Master `")
-    await autobio_loop()
+    await start_profile_job("autoprofile_autobio", autobio_loop)
 
 
 @catub.cat_cmd(
-    pattern="end ([\s\S]*)",
+    pattern=r"end ([\s\S]*)",
     command=("end", plugin_category),
     info={
         "header": "To stop the functions of autoprofile",
@@ -593,6 +685,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
         pfp_string = gvarstatus("autopfp_strings")[:-8]
         if pfp_string != "thorpfp":
             return await edit_delete(event, "`thorpfp is not started`")
+        await stop_profile_job("autoprofile_pfp")
         await event.client(
             functions.photos.DeletePhotosRequest(
                 await event.client.get_profile_photos("me", limit=1)
@@ -604,6 +697,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
         pfp_string = gvarstatus("autopfp_strings")[:-8]
         if pfp_string != "batmanpfp":
             return await edit_delete(event, "`batmanpfp is not started`")
+        await stop_profile_job("autoprofile_pfp")
         await event.client(
             functions.photos.DeletePhotosRequest(
                 await event.client.get_profile_photos("me", limit=1)
@@ -614,6 +708,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
     if input_str == "autopic":
         if gvarstatus("autopic") is not None and gvarstatus("autopic") == "true":
             delgvar("autopic")
+            await stop_profile_job("autoprofile_autopic")
             if os.path.exists(autopic_path):
                 file = await event.client.upload_file(autopic_path)
                 try:
@@ -626,6 +721,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
     if input_str == "digitalpfp":
         if gvarstatus("digitalpic") is not None and gvarstatus("digitalpic") == "true":
             delgvar("digitalpic")
+            await stop_profile_job("autoprofile_digitalpic")
             await event.client(
                 functions.photos.DeletePhotosRequest(
                     await event.client.get_profile_photos("me", limit=1)
@@ -636,6 +732,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
     if input_str == "bloom":
         if gvarstatus("bloom") is not None and gvarstatus("bloom") == "true":
             delgvar("bloom")
+            await stop_profile_job("autoprofile_bloom")
             if os.path.exists(autopic_path):
                 file = await event.client.upload_file(autopic_path)
                 try:
@@ -648,6 +745,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
     if input_str == "autoname":
         if gvarstatus("autoname") is not None and gvarstatus("autoname") == "true":
             delgvar("autoname")
+            await stop_profile_job("autoprofile_autoname")
             await event.client(
                 functions.account.UpdateProfileRequest(first_name=DEFAULTUSER)
             )
@@ -656,6 +754,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
     if input_str == "autobio":
         if gvarstatus("autobio") is not None and gvarstatus("autobio") == "true":
             delgvar("autobio")
+            await stop_profile_job("autoprofile_autobio")
             await event.client(
                 functions.account.UpdateProfileRequest(about=DEFAULTUSERBIO)
             )
@@ -666,6 +765,16 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
             delgvar("spamwork")
             return await edit_delete(event, "`Spam cmd has been stopped now`")
         return await edit_delete(event, "`You haven't started spam`")
+    if input_str == "all":
+        await job_supervisor.cancel_plugin_jobs("autoprofile")
+        delgvar("autopfp_strings")
+        delgvar("autopic")
+        delgvar("digitalpic")
+        delgvar("bloom")
+        delgvar("autoname")
+        delgvar("autobio")
+        delgvar("CUSTOM_PFP")
+        return await edit_delete(event, "`All autoprofile background jobs stopped and cleared.`")
     END_CMDS = [
         "autopic",
         "digitalpfp",
@@ -675,6 +784,7 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
         "thorpfp",
         "batmanpfp",
         "spam",
+        "all",
     ]
     if input_str not in END_CMDS:
         await edit_delete(
@@ -684,10 +794,25 @@ async def _(event):  # sourcery no-metrics  # sourcery skip: low-code-quality
         )
 
 
-catub.loop.create_task(autopfp_start())
-catub.loop.create_task(autopicloop())
-catub.loop.create_task(digitalpicloop())
-catub.loop.create_task(bloom_pfploop())
-catub.loop.create_task(autoname_loop())
-catub.loop.create_task(autobio_loop())
-catub.loop.create_task(custompfploop())
+async def on_load(ctx=None):
+    """Resume any enabled autoprofile background jobs under JobSupervisor."""
+    fetch_data()
+    if gvarstatus("autopfp_strings") is not None:
+        await start_profile_job("autoprofile_pfp", autopfp_start)
+    if gvarstatus("autopic") == "true":
+        await start_profile_job("autoprofile_autopic", autopicloop)
+    if gvarstatus("digitalpic") == "true":
+        await start_profile_job("autoprofile_digitalpic", digitalpicloop)
+    if gvarstatus("bloom") == "true":
+        await start_profile_job("autoprofile_bloom", bloom_pfploop)
+    if gvarstatus("autoname") == "true":
+        await start_profile_job("autoprofile_autoname", autoname_loop)
+    if gvarstatus("autobio") == "true":
+        await start_profile_job("autoprofile_autobio", autobio_loop)
+    if gvarstatus("CUSTOM_PFP") == "true":
+        await start_profile_job("autoprofile_custompfp", custompfploop)
+
+
+async def on_unload(ctx=None):
+    """Cancel all active autoprofile jobs."""
+    await job_supervisor.cancel_plugin_jobs("autoprofile")

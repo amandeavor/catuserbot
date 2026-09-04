@@ -41,8 +41,10 @@ def test_storage_mode_resolution():
 def test_refusal_of_silent_split_brain_fallback():
     """Verify that an unreachable PostgreSQL DB raises RuntimeError rather than silently switching to SQLite."""
     with patch("userbot.Config.Config.DB_URI", "postgresql://invalid_user:invalid_pass@127.0.0.1:59999/nonexistent"):
-        with pytest.raises(RuntimeError, match="strictly refuses to silently switch to SQLite"):
-            start()
+        with patch("userbot.sql_helper.create_engine") as mock_engine:
+            mock_engine.side_effect = OperationalError("connection refused", {}, None)
+            with pytest.raises(RuntimeError, match="strictly refuses to silently switch to SQLite"):
+                start()
 
 
 def test_database_cached_reads_during_temporary_outage():

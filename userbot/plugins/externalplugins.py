@@ -54,4 +54,9 @@ if Config.PLUGIN_CHANNEL:
                     f"Installed Plugin `{os.path.basename(downloaded_file_name)}` successfully.",
                 )
 
-    catub.loop.create_task(install())
+    if hasattr(catub, "loop") and catub.loop and catub.loop.is_running():
+        catub.loop.create_task(install())
+
+
+async def on_load(ctx=None):
+    await install()

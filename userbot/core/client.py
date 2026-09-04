@@ -15,7 +15,7 @@ import re
 import sys
 import traceback
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from userbot.core.ai import ai_router
 from userbot.core.flood_shield import flood_shield
@@ -73,6 +73,7 @@ sudo_enabledcmds = sudo_enabled_cmds()
 
 
 class CatUserBotClient(TelegramClient):
+    uid: int = 0
     def cat_cmd(
         self: TelegramClient,
         pattern: str or tuple = None,
@@ -265,6 +266,19 @@ class CatUserBotClient(TelegramClient):
                         LOADED_CMDS[command[0]].append(wrapper)
                     except BaseException:
                         LOADED_CMDS.update({command[0]: [wrapper]})
+                    try:
+                        from .plugins.compatibility import register_legacy_command
+                        register_legacy_command(
+                            self,
+                            func,
+                            pattern=pattern,
+                            command=command,
+                            groups_only=groups_only,
+                            private_only=private_only,
+                            allow_sudo=allow_sudo,
+                        )
+                    except Exception as e:
+                        LOGS.debug("Compatibility registration error: %s", e)
                 if edited:
                     catub.add_event_handler(
                         wrapper,
@@ -404,6 +418,49 @@ class CatUserBotClient(TelegramClient):
 
         return decorator
 
+MAINTENANCE_RPC_NAMES = {
+    "PingRequest",
+    "PingDelayDisconnectRequest",
+    "GetStateRequest",
+    "InitConnectionRequest",
+    "InvokeWithLayerRequest",
+    "DestroySessionRequest",
+    "GetDifferenceRequest",
+    "GetConfigRequest",
+    "GetNearestDcRequest",
+    "GetFutureSaltsRequest",
+    "MsgsAck",
+    "HttpWait",
+}
+
+MAINTENANCE_RPC_PREFIXES = (
+    "Ping",
+    "GetState",
+    "InitConnection",
+    "InvokeWithLayer",
+    "DestroySession",
+    "GetDifference",
+    "GetConfig",
+    "GetNearestDc",
+    "GetFutureSalts",
+    "MsgsAck",
+    "HttpWait",
+)
+
+
+def is_maintenance_request(request: Any) -> bool:
+    """
+    Returns True if request is an MTProto maintenance/heartbeat RPC that must bypass
+    rate limiting, deduplication, and circuit breaking.
+    """
+    if request is None:
+        return False
+    req_type = type(request).__name__
+    if req_type in MAINTENANCE_RPC_NAMES:
+        return True
+    return any(req_type.startswith(prefix) for prefix in MAINTENANCE_RPC_PREFIXES)
+
+
     async def get_traceback(self, exc: Exception) -> str:
         return "".join(
             traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
@@ -414,23 +471,10 @@ class CatUserBotClient(TelegramClient):
         Intercept all outbound MTProto RPC requests at the lowest common boundary.
         Categorizes requests into priority lanes and enforces FloodShieldV5 protection.
         """
-        req_type = type(request).__name__
-        is_maintenance = any(
-            req_type.startswith(p)
-            for p in (
-                "Ping",
-                "GetState",
-                "InitConnection",
-                "InvokeWithLayer",
-                "DestroySession",
-                "GetDifference",
-                "GetConfig",
-                "GetNearestDc",
-            )
-        )
-        if is_maintenance:
+        if is_maintenance_request(request):
             return await super().__call__(request, ordered=ordered)
 
+        req_type = type(request).__name__
         from userbot.core.flood_shield import RPCLane
         if any(req_type.startswith(p) for p in ("SaveFilePart", "SaveBigFilePart", "GetFile")):
             lane = RPCLane.P4_JOB

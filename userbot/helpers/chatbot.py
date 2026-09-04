@@ -9,18 +9,33 @@
 
 import json
 import os
-
-import openai
 import requests
-from fake_useragent import UserAgent
 
 from userbot.Config import Config
+
+try:
+    import openai
+    openai.api_key = Config.OPENAI_API_KEY
+except ImportError:
+    openai = None
+
+try:
+    from fake_useragent import UserAgent
+except ImportError:
+    class UserAgent:
+        @property
+        def random(self):
+            return "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 from userbot.core.managers import edit_delete, edit_or_reply
 from userbot.helpers.functions import format_image, wall_download
 from userbot.sql_helper.globals import gvarstatus
 
-openai.api_key = Config.OPENAI_API_KEY
 conversations = {}
+
+
+async def ai_api(event=None):
+    """Retrieve Kuki chatbot API key or fallback."""
+    return gvarstatus("KUKI_API_KEY") or "kuki_free_key"
 
 
 def generate_gpt_response(input_text, chat_id):

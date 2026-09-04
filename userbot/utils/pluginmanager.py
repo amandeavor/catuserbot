@@ -102,10 +102,14 @@ def remove_plugin(shortname):
 
 
 def checkplugins(filename):
-    with open(filename, "r") as f:
-        filedata = f.read()
-    filedata = filedata.replace("sendmessage", "send_message")
-    filedata = filedata.replace("sendfile", "send_file")
-    filedata = filedata.replace("editmessage", "edit_message")
-    with open(filename, "w") as f:
-        f.write(filedata)
+    try:
+        with open(filename, "r", encoding="utf-8", errors="ignore") as f:
+            filedata = f.read()
+        modified = filedata.replace("sendmessage", "send_message")
+        modified = modified.replace("sendfile", "send_file")
+        modified = modified.replace("editmessage", "edit_message")
+        if modified != filedata:
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(modified)
+    except Exception as e:
+        LOGS.debug("checkplugins error on %s: %s", filename, e)

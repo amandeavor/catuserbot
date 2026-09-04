@@ -28,7 +28,7 @@ except Exception:
 from .helpers.utils.utils import runasync
 from .sql_helper.globals import addgvar, delgvar, gvarstatus
 
-__version__ = "5.0.0-rc1"
+__version__ = "5.0.0-rc2"
 __license__ = "GNU Affero General Public License v3.0"
 __author__ = "Aetheris <https://github.com/amandeavor/catuserbot>"
 __copyright__ = f"Copyright (C) 2026  {__author__}"
@@ -40,8 +40,8 @@ bot = catub
 aetheris = catub
 
 StartTime = time.time()
-catversion = "5.0.0-rc1"
-aetherisversion = "5.0.0-rc1"
+catversion = "5.0.0-rc2"
+aetherisversion = "5.0.0-rc2"
 
 
 def close_connection(*_):

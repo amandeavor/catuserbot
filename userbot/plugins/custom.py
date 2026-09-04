@@ -7,7 +7,15 @@
 # Please see: https://github.com/TgCatUB/catuserbot/blob/master/LICENSE
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-from urlextract import URLExtract
+try:
+    from urlextract import URLExtract
+    extractor = URLExtract()
+except ImportError:
+    class URLExtractFallback:
+        def find_urls(self, text):
+            import re
+            return re.findall(r"https?://\S+", text or "")
+    extractor = URLExtractFallback()
 
 from userbot import BOTLOG_CHATID, catub
 from userbot.core.logger import logging
@@ -17,9 +25,6 @@ from ..sql_helper.globals import addgvar, delgvar, gvarstatus
 
 plugin_category = "tools"
 LOGS = logging.getLogger(__name__)
-
-
-extractor = URLExtract()
 
 
 @catub.cat_cmd(

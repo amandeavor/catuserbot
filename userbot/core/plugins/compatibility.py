@@ -28,9 +28,19 @@ def register_legacy_command(
     Registers a legacy CatUserBot/Aetheris v4 command handler into the V5 Atomic Registry.
     Extracts plugin ownership from caller stack frame and binds lifecycle tracking.
     """
-    stack = inspect.stack()
-    caller_frame = stack[2] if len(stack) > 2 else stack[1]
-    caller_file = Path(caller_frame.filename).stem.replace(".py", "")
+    caller_file = None
+    try:
+        caller_file = Path(inspect.getfile(callback)).stem.replace(".py", "")
+    except Exception:
+        pass
+    if not caller_file or caller_file == "<string>":
+        stack = inspect.stack()
+        for frame in stack[1:]:
+            fn = Path(frame.filename).stem.replace(".py", "")
+            if fn not in {"client", "compatibility", "registry", "pluginManager", "decorators"}:
+                caller_file = fn
+                break
+    caller_file = caller_file or "unknown"
 
     cmd_name = None
     category = "utils"

@@ -1,0 +1,1883 @@
+{
+  "timestamp": 1788504777.0761225,
+  "total_plugins": 138,
+  "passed": 138,
+  "failed": 0,
+  "pass_rate": 100.0,
+  "total_commands_registered": 495,
+  "details": [
+    {
+      "plugin": "account_powers",
+      "status": "PASS",
+      "commands": [
+        "purgeme",
+        "selfdestruct"
+      ],
+      "commands_count": 2,
+      "duration_ms": 495.12,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "admin",
+      "status": "PASS",
+      "commands": [
+        "gpic",
+        "promote",
+        "demote",
+        "ban",
+        "unban",
+        "mute",
+        "unmute",
+        "kick",
+        "pin",
+        "unpin",
+        "undlt"
+      ],
+      "commands_count": 11,
+      "duration_ms": 2143.06,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "admin_nuke_defense",
+      "status": "PASS",
+      "commands": [
+        "kickdeleted",
+        "fakeaction",
+        "delayspam"
+      ],
+      "commands_count": 3,
+      "duration_ms": 44.65,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "aetheris_suite",
+      "status": "PASS",
+      "commands": [
+        "aetheris",
+        "floodtest",
+        "quickpurge"
+      ],
+      "commands_count": 3,
+      "duration_ms": 68.43,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "afk",
+      "status": "PASS",
+      "commands": [
+        "afk",
+        "mafk"
+      ],
+      "commands_count": 2,
+      "duration_ms": 36.16,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ai_powerhouse",
+      "status": "PASS",
+      "commands": [
+        "setgemini",
+        "checkgemini",
+        "ai",
+        "imagine",
+        "anime",
+        "summarize",
+        "grammar",
+        "eli5"
+      ],
+      "commands_count": 8,
+      "duration_ms": 127.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "aitools",
+      "status": "PASS",
+      "commands": [
+        "genimg",
+        "gentxt"
+      ],
+      "commands_count": 2,
+      "duration_ms": 116.82,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "alive",
+      "status": "PASS",
+      "commands": [
+        "alive",
+        "ialive"
+      ],
+      "commands_count": 2,
+      "duration_ms": 25.07,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "android",
+      "status": "PASS",
+      "commands": [
+        "magisk",
+        "device",
+        "codename",
+        "twrp"
+      ],
+      "commands_count": 4,
+      "duration_ms": 45.82,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "anilist",
+      "status": "PASS",
+      "commands": [
+        "aq",
+        "aluser",
+        "mal",
+        "airing",
+        "anime",
+        "manga",
+        "fillers",
+        "char",
+        "akaizoku",
+        "upcoming",
+        "aschedule",
+        "whatanime"
+      ],
+      "commands_count": 12,
+      "duration_ms": 168.81,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "antiflood",
+      "status": "PASS",
+      "commands": [
+        "setflood"
+      ],
+      "commands_count": 1,
+      "duration_ms": 26.01,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "antispambot",
+      "status": "PASS",
+      "commands": [
+        "cascheck",
+        "spamcheck"
+      ],
+      "commands_count": 2,
+      "duration_ms": 31.94,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "app",
+      "status": "PASS",
+      "commands": [
+        "app"
+      ],
+      "commands_count": 1,
+      "duration_ms": 42.08,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "archive",
+      "status": "PASS",
+      "commands": [
+        "zip",
+        "tar",
+        "unzip",
+        "untar"
+      ],
+      "commands_count": 4,
+      "duration_ms": 63.61,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "autoprofile",
+      "status": "PASS",
+      "commands": [
+        "batmanpfp",
+        "thorpfp",
+        "autopic",
+        "digitalpfp",
+        "bloom",
+        "custompfp",
+        "autoname",
+        "autobio",
+        "end"
+      ],
+      "commands_count": 9,
+      "duration_ms": 141.49,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "blacklistchats",
+      "status": "PASS",
+      "commands": [
+        "chatblacklist",
+        "addblkchat",
+        "rmblkchat",
+        "listblkchats"
+      ],
+      "commands_count": 4,
+      "duration_ms": 48.14,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "blacklistwords",
+      "status": "PASS",
+      "commands": [
+        "addblacklist",
+        "rmblacklist",
+        "listblacklist"
+      ],
+      "commands_count": 3,
+      "duration_ms": 90.28,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "broadcast",
+      "status": "PASS",
+      "commands": [
+        "msgto",
+        "addto",
+        "list",
+        "listall",
+        "sendto",
+        "fwdto",
+        "rmfrom",
+        "frmfrom",
+        "delc"
+      ],
+      "commands_count": 9,
+      "duration_ms": 121.65,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "button",
+      "status": "PASS",
+      "commands": [
+        "ibutton",
+        "cbutton"
+      ],
+      "commands_count": 2,
+      "duration_ms": 40.02,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "calc",
+      "status": "PASS",
+      "commands": [
+        "calc"
+      ],
+      "commands_count": 1,
+      "duration_ms": 32.72,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "carbon",
+      "status": "PASS",
+      "commands": [
+        "carbon",
+        "kar1",
+        "kar2",
+        "kar3",
+        "kar4",
+        "kargb"
+      ],
+      "commands_count": 6,
+      "duration_ms": 70.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "chain",
+      "status": "PASS",
+      "commands": [
+        "chain"
+      ],
+      "commands_count": 1,
+      "duration_ms": 11.63,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "channel_download",
+      "status": "PASS",
+      "commands": [
+        "getc",
+        "geta"
+      ],
+      "commands_count": 2,
+      "duration_ms": 23.01,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "chatbot",
+      "status": "PASS",
+      "commands": [
+        "addai",
+        "rmai",
+        "delai",
+        "listai"
+      ],
+      "commands_count": 4,
+      "duration_ms": 59.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "climate",
+      "status": "PASS",
+      "commands": [
+        "climate",
+        "setcity",
+        "weather",
+        "wttr"
+      ],
+      "commands_count": 4,
+      "duration_ms": 41.66,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "clone",
+      "status": "PASS",
+      "commands": [
+        "clone",
+        "revert"
+      ],
+      "commands_count": 2,
+      "duration_ms": 62.76,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "collage",
+      "status": "PASS",
+      "commands": [
+        "collage"
+      ],
+      "commands_count": 1,
+      "duration_ms": 14.87,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "corecmds",
+      "status": "PASS",
+      "commands": [
+        "install",
+        "load",
+        "reload",
+        "tasks",
+        "taskkill",
+        "send",
+        "unload",
+        "uninstall",
+        "logs"
+      ],
+      "commands_count": 9,
+      "duration_ms": 145.01,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "create",
+      "status": "PASS",
+      "commands": [
+        "create"
+      ],
+      "commands_count": 1,
+      "duration_ms": 17.14,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "custom",
+      "status": "PASS",
+      "commands": [
+        "custom",
+        "delcustom"
+      ],
+      "commands_count": 2,
+      "duration_ms": 21.55,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "cyber_tools",
+      "status": "PASS",
+      "commands": [
+        "tempmail",
+        "checkmail",
+        "ip",
+        "lyrics",
+        "weather"
+      ],
+      "commands_count": 5,
+      "duration_ms": 63.48,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "dictionary",
+      "status": "PASS",
+      "commands": [
+        "ud",
+        "meaning"
+      ],
+      "commands_count": 2,
+      "duration_ms": 20.94,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "direct_links",
+      "status": "PASS",
+      "commands": [
+        "direct"
+      ],
+      "commands_count": 1,
+      "duration_ms": 13.94,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "download",
+      "status": "PASS",
+      "commands": [
+        "download",
+        "dlto"
+      ],
+      "commands_count": 2,
+      "duration_ms": 20.8,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "download_modern",
+      "status": "PASS",
+      "commands": [
+        "dl",
+        "song"
+      ],
+      "commands_count": 2,
+      "duration_ms": 22.57,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "emojigames",
+      "status": "PASS",
+      "commands": [
+        "dart",
+        "dice",
+        "bb",
+        "fb",
+        "jp",
+        "bowl"
+      ],
+      "commands_count": 6,
+      "duration_ms": 95.96,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "evaluators",
+      "status": "PASS",
+      "commands": [
+        "exec",
+        "eval",
+        "inspect"
+      ],
+      "commands_count": 3,
+      "duration_ms": 31.63,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "execmod",
+      "status": "PASS",
+      "commands": [
+        "suicide",
+        "plugins",
+        "env",
+        "noformat",
+        "when"
+      ],
+      "commands_count": 5,
+      "duration_ms": 106.79,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "externalplugins",
+      "status": "PASS",
+      "commands": [],
+      "commands_count": 0,
+      "duration_ms": 0.88,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "fake",
+      "status": "PASS",
+      "commands": [
+        "scam",
+        "prankpromote",
+        "padmin"
+      ],
+      "commands_count": 3,
+      "duration_ms": 36.46,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "fedutils",
+      "status": "PASS",
+      "commands": [
+        "fban",
+        "unfban",
+        "addfedto",
+        "rmfedfrom",
+        "listfed",
+        "fedinfo",
+        "fadmins",
+        "myfeds",
+        "fstat"
+      ],
+      "commands_count": 9,
+      "duration_ms": 152.78,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ffmpeg",
+      "status": "PASS",
+      "commands": [
+        "compress",
+        "ffmpegsave",
+        "vtrim",
+        "atrim",
+        "ffmpegclear"
+      ],
+      "commands_count": 5,
+      "duration_ms": 71.47,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "fileconverts",
+      "status": "PASS",
+      "commands": [
+        "spin",
+        "circle",
+        "mtoi",
+        "itos",
+        "ttf",
+        "ftt",
+        "ftoi",
+        "gif",
+        "nfc",
+        "itog"
+      ],
+      "commands_count": 10,
+      "duration_ms": 159.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "filemanager",
+      "status": "PASS",
+      "commands": [
+        "ls",
+        "rem",
+        "mkdir",
+        "cpto",
+        "mvto"
+      ],
+      "commands_count": 5,
+      "duration_ms": 107.21,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "filesummary",
+      "status": "PASS",
+      "commands": [
+        "chatfs",
+        "userfs"
+      ],
+      "commands_count": 2,
+      "duration_ms": 25.57,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "filext",
+      "status": "PASS",
+      "commands": [
+        "filext"
+      ],
+      "commands_count": 1,
+      "duration_ms": 11.89,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "filters",
+      "status": "PASS",
+      "commands": [
+        "filter",
+        "filters",
+        "stop",
+        "rmfilters"
+      ],
+      "commands_count": 4,
+      "duration_ms": 49.7,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "forward",
+      "status": "PASS",
+      "commands": [
+        "frwd",
+        "resend",
+        "fpost"
+      ],
+      "commands_count": 3,
+      "duration_ms": 32.31,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "fryer",
+      "status": "PASS",
+      "commands": [
+        "frybot",
+        "deepfry"
+      ],
+      "commands_count": 2,
+      "duration_ms": 19.62,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "fun_modern",
+      "status": "PASS",
+      "commands": [
+        "crypto",
+        "fake",
+        "qr",
+        "ss",
+        "short",
+        "joke",
+        "fact"
+      ],
+      "commands_count": 7,
+      "duration_ms": 101.72,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "gadmin",
+      "status": "PASS",
+      "commands": [
+        "gban",
+        "ungban",
+        "listgban",
+        "gmute",
+        "ungmute",
+        "gkick"
+      ],
+      "commands_count": 6,
+      "duration_ms": 87.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "gdrive",
+      "status": "PASS",
+      "commands": [
+        "gauth",
+        "greset",
+        "glist",
+        "gdf",
+        "gabort",
+        "ugd",
+        "gclear",
+        "gset",
+        "gdown",
+        "gshare"
+      ],
+      "commands_count": 10,
+      "duration_ms": 195.88,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "getid",
+      "status": "PASS",
+      "commands": [
+        "id"
+      ],
+      "commands_count": 1,
+      "duration_ms": 21.13,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "gifs",
+      "status": "PASS",
+      "commands": [
+        "gifs"
+      ],
+      "commands_count": 1,
+      "duration_ms": 12.78,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "git",
+      "status": "PASS",
+      "commands": [
+        "repo",
+        "github",
+        "commit"
+      ],
+      "commands_count": 3,
+      "duration_ms": 32.82,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "glitch",
+      "status": "PASS",
+      "commands": [
+        "glitch"
+      ],
+      "commands_count": 1,
+      "duration_ms": 18.78,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "google",
+      "status": "PASS",
+      "commands": [
+        "gs",
+        "gis",
+        "grs",
+        "reverse",
+        "google"
+      ],
+      "commands_count": 5,
+      "duration_ms": 119.23,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "gps",
+      "status": "PASS",
+      "commands": [
+        "gps"
+      ],
+      "commands_count": 1,
+      "duration_ms": 20.96,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "greetings",
+      "status": "PASS",
+      "commands": [
+        "baby",
+        "hbd",
+        "thanks",
+        "gm",
+        "gnoon",
+        "gn",
+        "gmg",
+        "gmg2",
+        "gmg3",
+        "gnt",
+        "gnt2",
+        "gnt3",
+        "hi",
+        "cheer",
+        "getwell",
+        "luck",
+        "sprinkle"
+      ],
+      "commands_count": 17,
+      "duration_ms": 317.58,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "groupactions",
+      "status": "PASS",
+      "commands": [
+        "kickme",
+        "kickall",
+        "banall",
+        "unbanall",
+        "zombies",
+        "ikuck"
+      ],
+      "commands_count": 6,
+      "duration_ms": 102.22,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "groupdata",
+      "status": "PASS",
+      "commands": [
+        "admins",
+        "bots",
+        "users",
+        "chatinfo",
+        "grpstats"
+      ],
+      "commands_count": 5,
+      "duration_ms": 99.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "hash",
+      "status": "PASS",
+      "commands": [
+        "hash",
+        "hbase"
+      ],
+      "commands_count": 2,
+      "duration_ms": 19.87,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "help",
+      "status": "PASS",
+      "commands": [
+        "help",
+        "cmds",
+        "s",
+        "dc"
+      ],
+      "commands_count": 4,
+      "duration_ms": 51.67,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "heroku",
+      "status": "PASS",
+      "commands": [
+        "var",
+        "usage",
+        "herokulogs",
+        "buildpack"
+      ],
+      "commands_count": 4,
+      "duration_ms": 82.68,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "hikka_resilience",
+      "status": "PASS",
+      "commands": [
+        "markread",
+        "leave",
+        "json",
+        "math",
+        "figlet"
+      ],
+      "commands_count": 5,
+      "duration_ms": 58.42,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "image_magic",
+      "status": "PASS",
+      "commands": [
+        "blur"
+      ],
+      "commands_count": 1,
+      "duration_ms": 34.88,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "images",
+      "status": "PASS",
+      "commands": [
+        "img"
+      ],
+      "commands_count": 1,
+      "duration_ms": 25.25,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "invite",
+      "status": "PASS",
+      "commands": [
+        "invite"
+      ],
+      "commands_count": 1,
+      "duration_ms": 20.18,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "json",
+      "status": "PASS",
+      "commands": [
+        "json",
+        "yaml"
+      ],
+      "commands_count": 2,
+      "duration_ms": 20.74,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "lastfm",
+      "status": "PASS",
+      "commands": [
+        "lastfm",
+        "lastbio",
+        "lastlog"
+      ],
+      "commands_count": 3,
+      "duration_ms": 34.61,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "letmesearch",
+      "status": "PASS",
+      "commands": [
+        "lmg",
+        "lmy",
+        "ddg",
+        "lmalt",
+        "lmvar",
+        "lmlog",
+        "dyno",
+        "lmkp",
+        "gem",
+        "archive"
+      ],
+      "commands_count": 10,
+      "duration_ms": 159.92,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "locks",
+      "status": "PASS",
+      "commands": [
+        "lock",
+        "unlock",
+        "locks",
+        "plock",
+        "punlock",
+        "uperm"
+      ],
+      "commands_count": 6,
+      "duration_ms": 135.29,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "logchats",
+      "status": "PASS",
+      "commands": [
+        "save",
+        "log",
+        "nolog",
+        "pmlog",
+        "grplog"
+      ],
+      "commands_count": 5,
+      "duration_ms": 98.23,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "logo",
+      "status": "PASS",
+      "commands": [
+        "logo",
+        "lbg",
+        "lf",
+        "lvar"
+      ],
+      "commands_count": 4,
+      "duration_ms": 98.88,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "lyrics",
+      "status": "PASS",
+      "commands": [
+        "lyrics"
+      ],
+      "commands_count": 1,
+      "duration_ms": 13.67,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "markdown",
+      "status": "PASS",
+      "commands": [],
+      "commands_count": 0,
+      "duration_ms": 23.65,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "mediainfo",
+      "status": "PASS",
+      "commands": [
+        "minfo"
+      ],
+      "commands_count": 1,
+      "duration_ms": 15.52,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "mega",
+      "status": "PASS",
+      "commands": [
+        "mega"
+      ],
+      "commands_count": 1,
+      "duration_ms": 22.46,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "memify",
+      "status": "PASS",
+      "commands": [
+        "pframe",
+        "mmf",
+        "cfont",
+        "ascii",
+        "invert",
+        "solarize",
+        "mirror",
+        "flip",
+        "gray",
+        "zoom",
+        "frame"
+      ],
+      "commands_count": 11,
+      "duration_ms": 195.27,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "mention",
+      "status": "PASS",
+      "commands": [
+        "tagall",
+        "report",
+        "mention"
+      ],
+      "commands_count": 3,
+      "duration_ms": 55.61,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "notebook",
+      "status": "PASS",
+      "commands": [
+        "write",
+        "notebook",
+        "nb"
+      ],
+      "commands_count": 3,
+      "duration_ms": 37.1,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "nsfwdetect",
+      "status": "PASS",
+      "commands": [
+        "detect"
+      ],
+      "commands_count": 1,
+      "duration_ms": 28.55,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ocr",
+      "status": "PASS",
+      "commands": [
+        "ocr",
+        "tocr"
+      ],
+      "commands_count": 2,
+      "duration_ms": 60.5,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "openai",
+      "status": "PASS",
+      "commands": [
+        "gpt",
+        "dalle"
+      ],
+      "commands_count": 2,
+      "duration_ms": 29.9,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "pastebin",
+      "status": "PASS",
+      "commands": [
+        "rayso",
+        "pcode",
+        "paste",
+        "getpaste",
+        "paster"
+      ],
+      "commands_count": 5,
+      "duration_ms": 135.75,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ping",
+      "status": "PASS",
+      "commands": [
+        "ping"
+      ],
+      "commands_count": 1,
+      "duration_ms": 13.94,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "pmpermit",
+      "status": "PASS",
+      "commands": [
+        "pmguard",
+        "pmmenu",
+        "approve",
+        "tapprove",
+        "disapprove",
+        "block",
+        "unblock",
+        "listapproved"
+      ],
+      "commands_count": 8,
+      "duration_ms": 129.45,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "poll",
+      "status": "PASS",
+      "commands": [
+        "poll"
+      ],
+      "commands_count": 1,
+      "duration_ms": 37.72,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "poto",
+      "status": "PASS",
+      "commands": [
+        "poto",
+        "blur"
+      ],
+      "commands_count": 2,
+      "duration_ms": 36.75,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "powertools",
+      "status": "PASS",
+      "commands": [
+        "restart",
+        "shutdown",
+        "sleep",
+        "notify"
+      ],
+      "commands_count": 4,
+      "duration_ms": 77.96,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "privatewelcome",
+      "status": "PASS",
+      "commands": [
+        "savepwel",
+        "clearpwel",
+        "listpwel"
+      ],
+      "commands_count": 3,
+      "duration_ms": 55.42,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "profile",
+      "status": "PASS",
+      "commands": [
+        "pbio",
+        "pname",
+        "ppic",
+        "pusername",
+        "count",
+        "delpfp",
+        "myusernames"
+      ],
+      "commands_count": 7,
+      "duration_ms": 173.2,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "purge",
+      "status": "PASS",
+      "commands": [
+        "del",
+        "purgefrom",
+        "purgeto",
+        "purgeme",
+        "purge",
+        "upurge"
+      ],
+      "commands_count": 6,
+      "duration_ms": 223.66,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "quotly",
+      "status": "PASS",
+      "commands": [
+        "qpic",
+        "q",
+        "qbot"
+      ],
+      "commands_count": 3,
+      "duration_ms": 137.75,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "reddit",
+      "status": "PASS",
+      "commands": [
+        "reddit"
+      ],
+      "commands_count": 1,
+      "duration_ms": 37.15,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "removebg",
+      "status": "PASS",
+      "commands": [
+        "rmbg"
+      ],
+      "commands_count": 1,
+      "duration_ms": 26.99,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "rename",
+      "status": "PASS",
+      "commands": [
+        "rnup"
+      ],
+      "commands_count": 1,
+      "duration_ms": 65.2,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "sangmata",
+      "status": "PASS",
+      "commands": [
+        "sg"
+      ],
+      "commands_count": 1,
+      "duration_ms": 35.49,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "schedule",
+      "status": "PASS",
+      "commands": [
+        "schedule",
+        "autoschedule",
+        "myschedule"
+      ],
+      "commands_count": 3,
+      "duration_ms": 118.74,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "scrapers",
+      "status": "PASS",
+      "commands": [
+        "wiki",
+        "imdb"
+      ],
+      "commands_count": 2,
+      "duration_ms": 54.2,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "screenshot",
+      "status": "PASS",
+      "commands": [
+        "ss",
+        "scapture"
+      ],
+      "commands_count": 2,
+      "duration_ms": 51.44,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "sed",
+      "status": "PASS",
+      "commands": [
+        "sed"
+      ],
+      "commands_count": 1,
+      "duration_ms": 21.54,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "selfdestruct",
+      "status": "PASS",
+      "commands": [
+        "sdm",
+        "selfdm"
+      ],
+      "commands_count": 2,
+      "duration_ms": 88.31,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "snip",
+      "status": "PASS",
+      "commands": [
+        "snips",
+        "snipl",
+        "snipd"
+      ],
+      "commands_count": 3,
+      "duration_ms": 79.97,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "social_fun",
+      "status": "PASS",
+      "commands": [
+        "type",
+        "mock",
+        "flip",
+        "love",
+        "dice"
+      ],
+      "commands_count": 5,
+      "duration_ms": 151.53,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "songs",
+      "status": "PASS",
+      "commands": [
+        "song",
+        "vsong",
+        "shazam",
+        "song2"
+      ],
+      "commands_count": 4,
+      "duration_ms": 51.38,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "spam",
+      "status": "PASS",
+      "commands": [
+        "spam",
+        "spspam",
+        "cspam",
+        "wspam",
+        "delayspam",
+        "rspam"
+      ],
+      "commands_count": 6,
+      "duration_ms": 330.68,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "speedtest",
+      "status": "PASS",
+      "commands": [
+        "speedtest"
+      ],
+      "commands_count": 1,
+      "duration_ms": 24.41,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "spotify",
+      "status": "PASS",
+      "commands": [
+        "spsetup",
+        "spbio",
+        "spnow",
+        "spinfo",
+        "sprecent",
+        "now"
+      ],
+      "commands_count": 6,
+      "duration_ms": 158.01,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "stats",
+      "status": "PASS",
+      "commands": [
+        "stat",
+        "ustat"
+      ],
+      "commands_count": 2,
+      "duration_ms": 100.98,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "stealth_channel_save",
+      "status": "PASS",
+      "commands": [
+        "saved"
+      ],
+      "commands_count": 1,
+      "duration_ms": 16.87,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "stickerfun",
+      "status": "PASS",
+      "commands": [
+        "sttxt",
+        "stcr",
+        "honk",
+        "twt",
+        "glax",
+        "quby",
+        "blob",
+        "doge",
+        "penguin",
+        "gandhi"
+      ],
+      "commands_count": 10,
+      "duration_ms": 193.37,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "stickers",
+      "status": "PASS",
+      "commands": [
+        "kang",
+        "pkang",
+        "vas",
+        "gridpack",
+        "stkrinfo",
+        "stickers"
+      ],
+      "commands_count": 6,
+      "duration_ms": 136.45,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "stt",
+      "status": "PASS",
+      "commands": [
+        "stt"
+      ],
+      "commands_count": 1,
+      "duration_ms": 16.79,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "sudo",
+      "status": "PASS",
+      "commands": [
+        "sudo",
+        "addsudo",
+        "delsudo",
+        "vsudo",
+        "addscmd",
+        "rmscmd",
+        "vscmds"
+      ],
+      "commands_count": 7,
+      "duration_ms": 173.71,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "sysdetails",
+      "status": "PASS",
+      "commands": [
+        "spc",
+        "cpu",
+        "sysd"
+      ],
+      "commands_count": 3,
+      "duration_ms": 53.39,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "tadmin",
+      "status": "PASS",
+      "commands": [
+        "tmute",
+        "tban"
+      ],
+      "commands_count": 2,
+      "duration_ms": 72.18,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "telegraph",
+      "status": "PASS",
+      "commands": [
+        "telegraph",
+        "ctg"
+      ],
+      "commands_count": 2,
+      "duration_ms": 34.72,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "thumbnail",
+      "status": "PASS",
+      "commands": [
+        "savethumb",
+        "clearthumb",
+        "getthumb"
+      ],
+      "commands_count": 3,
+      "duration_ms": 51.43,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "time",
+      "status": "PASS",
+      "commands": [
+        "time",
+        "stime"
+      ],
+      "commands_count": 2,
+      "duration_ms": 181.42,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "tools",
+      "status": "PASS",
+      "commands": [
+        "cur",
+        "scan",
+        "decode",
+        "barcode",
+        "makeqr",
+        "cal",
+        "ip",
+        "ifsc",
+        "color",
+        "xkcd"
+      ],
+      "commands_count": 10,
+      "duration_ms": 652.61,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "transfer_channel",
+      "status": "PASS",
+      "commands": [
+        "otransfer"
+      ],
+      "commands_count": 1,
+      "duration_ms": 46.39,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "translate",
+      "status": "PASS",
+      "commands": [
+        "tl",
+        "trt",
+        "lang"
+      ],
+      "commands_count": 3,
+      "duration_ms": 117.28,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "trolls",
+      "status": "PASS",
+      "commands": [
+        "trash",
+        "threats",
+        "trap",
+        "phub"
+      ],
+      "commands_count": 4,
+      "duration_ms": 236.55,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "tts",
+      "status": "PASS",
+      "commands": [
+        "tts"
+      ],
+      "commands_count": 1,
+      "duration_ms": 47.24,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ultroid_power",
+      "status": "PASS",
+      "commands": [
+        "paste",
+        "cur",
+        "ud",
+        "dict",
+        "country",
+        "hash",
+        "b64e"
+      ],
+      "commands_count": 7,
+      "duration_ms": 263.15,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "updater",
+      "status": "PASS",
+      "commands": [
+        "update",
+        "switch"
+      ],
+      "commands_count": 2,
+      "duration_ms": 101.71,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "upload",
+      "status": "PASS",
+      "commands": [
+        "upload"
+      ],
+      "commands_count": 1,
+      "duration_ms": 41.43,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "urltools",
+      "status": "PASS",
+      "commands": [
+        "dns",
+        "short",
+        "unshort",
+        "hl"
+      ],
+      "commands_count": 4,
+      "duration_ms": 145.61,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "voice_magic",
+      "status": "PASS",
+      "commands": [
+        "vecho"
+      ],
+      "commands_count": 1,
+      "duration_ms": 22.8,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "vps",
+      "status": "PASS",
+      "commands": [
+        "var",
+        "reload"
+      ],
+      "commands_count": 2,
+      "duration_ms": 69.7,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "wall",
+      "status": "PASS",
+      "commands": [
+        "wall"
+      ],
+      "commands_count": 1,
+      "duration_ms": 49.83,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "warns",
+      "status": "PASS",
+      "commands": [
+        "warn",
+        "warns",
+        "resetwarns"
+      ],
+      "commands_count": 3,
+      "duration_ms": 133.22,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "watch",
+      "status": "PASS",
+      "commands": [
+        "watch"
+      ],
+      "commands_count": 1,
+      "duration_ms": 31.74,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "webupload",
+      "status": "PASS",
+      "commands": [
+        "labstack",
+        "webupload"
+      ],
+      "commands_count": 2,
+      "duration_ms": 33.53,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "welcome",
+      "status": "PASS",
+      "commands": [
+        "savewelcome",
+        "clearwelcome",
+        "listwelcome",
+        "cleanwelcome"
+      ],
+      "commands_count": 4,
+      "duration_ms": 90.94,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "whois",
+      "status": "PASS",
+      "commands": [
+        "userinfo",
+        "whois",
+        "link"
+      ],
+      "commands_count": 3,
+      "duration_ms": 63.34,
+      "unbound_clean": true,
+      "error": null
+    },
+    {
+      "plugin": "ytdl",
+      "status": "PASS",
+      "commands": [
+        "yta",
+        "ytv",
+        "insta",
+        "yts"
+      ],
+      "commands_count": 4,
+      "duration_ms": 85.1,
+      "unbound_clean": true,
+      "error": null
+    }
+  ]
+}

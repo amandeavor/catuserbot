@@ -25,6 +25,48 @@ class RPCLane(enum.IntEnum):
 
 TrafficPriority = RPCLane
 
+MAINTENANCE_RPC_NAMES = {
+    "PingRequest",
+    "PingDelayDisconnectRequest",
+    "GetStateRequest",
+    "InitConnectionRequest",
+    "InvokeWithLayerRequest",
+    "DestroySessionRequest",
+    "GetDifferenceRequest",
+    "GetConfigRequest",
+    "GetNearestDcRequest",
+    "GetFutureSaltsRequest",
+    "MsgsAck",
+    "HttpWait",
+}
+
+MAINTENANCE_RPC_PREFIXES = (
+    "Ping",
+    "GetState",
+    "InitConnection",
+    "InvokeWithLayer",
+    "DestroySession",
+    "GetDifference",
+    "GetConfig",
+    "GetNearestDc",
+    "GetFutureSalts",
+    "MsgsAck",
+    "HttpWait",
+)
+
+
+def is_maintenance_request(request: Any) -> bool:
+    """
+    Returns True if request is an MTProto maintenance/heartbeat RPC that must bypass
+    rate limiting, deduplication, and circuit breaking.
+    """
+    if request is None:
+        return False
+    req_type = type(request).__name__
+    if req_type in MAINTENANCE_RPC_NAMES:
+        return True
+    return any(req_type.startswith(prefix) for prefix in MAINTENANCE_RPC_PREFIXES)
+
 
 class CircuitState(enum.Enum):
     CLOSED = "CLOSED"         # Normal operation

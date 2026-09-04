@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..container import container
+from ..jobs.supervisor import job_supervisor
 from .generation import PluginGeneration
 from .manifest import PluginManifest
 from .registry import RegisteredHandler, atomic_registry
@@ -150,6 +151,7 @@ class VersionedPluginManager:
                 await old_generation.run_quiesce()
                 await atomic_registry.unregister_generation(old_generation.generation_key)
                 await old_generation.cancel_and_drain_tasks(timeout=2.0)
+                await job_supervisor.cancel_plugin_jobs(plugin_name)
                 await old_generation.run_unload()
 
                 # Step 12-16: Clean module references and garbage collect
@@ -171,6 +173,7 @@ class VersionedPluginManager:
             await generation.run_quiesce()
             await atomic_registry.unregister_generation(generation.generation_key)
             await generation.cancel_and_drain_tasks(timeout=2.0)
+            await job_supervisor.cancel_plugin_jobs(plugin_name)
             await generation.run_unload()
 
             mod_name = f"aetheris.plugins.{plugin_name}_gen{generation.generation_id}"

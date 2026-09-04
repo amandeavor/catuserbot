@@ -171,7 +171,7 @@ class DashboardServer:
         ]
         return {
             "status": "operational",
-            "version": "5.0.0-rc1",
+            "version": "5.0.0-rc2",
             "metrics": metrics.get_snapshot(),
             "plugins": {
                 "total_handlers": len(atomic_registry.handlers),

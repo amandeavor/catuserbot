@@ -1,0 +1,15 @@
+{"sample": 1, "elapsed_s": 0.0, "rss_mb": 147.64, "heap_objects": 231896, "active_tasks": 13, "active_jobs": 2, "loop_lag_ms": 8.825, "timestamp": 1788505120.5816712}
+{"sample": 2, "elapsed_s": 1.22, "rss_mb": 149.21, "heap_objects": 232405, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 0.441, "timestamp": 1788505121.8026524}
+{"sample": 3, "elapsed_s": 2.45, "rss_mb": 149.28, "heap_objects": 232662, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 6.917, "timestamp": 1788505123.0309966}
+{"sample": 4, "elapsed_s": 3.7, "rss_mb": 149.33, "heap_objects": 232903, "active_tasks": 13, "active_jobs": 0, "loop_lag_ms": 12.827, "timestamp": 1788505124.2766738}
+{"sample": 5, "elapsed_s": 5.28, "rss_mb": 149.39, "heap_objects": 233186, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 3.939, "timestamp": 1788505125.8594837}
+{"sample": 6, "elapsed_s": 6.5, "rss_mb": 149.5, "heap_objects": 233428, "active_tasks": 13, "active_jobs": 0, "loop_lag_ms": 2.761, "timestamp": 1788505127.0814893}
+{"sample": 7, "elapsed_s": 8.06, "rss_mb": 149.5, "heap_objects": 233680, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 6.665, "timestamp": 1788505128.6405702}
+{"sample": 8, "elapsed_s": 9.25, "rss_mb": 149.61, "heap_objects": 233937, "active_tasks": 14, "active_jobs": 1, "loop_lag_ms": 0.232, "timestamp": 1788505129.8347287}
+{"sample": 9, "elapsed_s": 10.52, "rss_mb": 150.54, "heap_objects": 234163, "active_tasks": 13, "active_jobs": 0, "loop_lag_ms": 0.581, "timestamp": 1788505131.101189}
+{"sample": 10, "elapsed_s": 11.92, "rss_mb": 150.68, "heap_objects": 234417, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 0.704, "timestamp": 1788505132.499201}
+{"sample": 11, "elapsed_s": 13.27, "rss_mb": 150.73, "heap_objects": 234678, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 11.797, "timestamp": 1788505133.8540797}
+{"sample": 12, "elapsed_s": 14.85, "rss_mb": 150.79, "heap_objects": 234943, "active_tasks": 13, "active_jobs": 0, "loop_lag_ms": 2.781, "timestamp": 1788505135.4345546}
+{"sample": 13, "elapsed_s": 16.17, "rss_mb": 150.78, "heap_objects": 235183, "active_tasks": 13, "active_jobs": 0, "loop_lag_ms": 12.11, "timestamp": 1788505136.7537568}
+{"sample": 14, "elapsed_s": 17.59, "rss_mb": 150.88, "heap_objects": 235418, "active_tasks": 13, "active_jobs": 2, "loop_lag_ms": 13.604, "timestamp": 1788505138.1707253}
+{"sample": 15, "elapsed_s": 19.1, "rss_mb": 150.89, "heap_objects": 235696, "active_tasks": 13, "active_jobs": 1, "loop_lag_ms": 3.937, "timestamp": 1788505139.685106}

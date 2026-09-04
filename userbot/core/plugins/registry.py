@@ -138,6 +138,34 @@ class AtomicHandlerRegistry:
         LOGS.debug("Unregistered %d handlers for generation %s", len(removed_ids), generation_key)
         return removed_ids
 
+    async def unregister_plugin(self, plugin_name: str) -> List[str]:
+        """Atomically unregister all handlers belonging to a specific plugin."""
+        removed_ids = []
+        async with self._lock:
+            to_remove = [
+                hid for hid, h in self._handlers.items()
+                if getattr(h, "plugin_name", None) == plugin_name
+            ]
+            for hid in to_remove:
+                handler = self._handlers.pop(hid)
+                if getattr(handler, "command_name", None) and handler.command_name.lower() in self._command_map:
+                    if self._command_map[handler.command_name.lower()] == hid:
+                        del self._command_map[handler.command_name.lower()]
+
+                if self._transport and getattr(handler, "bound_transport_handler", None):
+                    try:
+                        self._transport.remove_event_handler(
+                            handler.bound_transport_handler,
+                            handler.event_builder,
+                        )
+                    except Exception as e:
+                        LOGS.debug("Exception during transport handler removal: %s", e)
+
+                removed_ids.append(hid)
+
+        LOGS.debug("Unregistered %d handlers for plugin %s", len(removed_ids), plugin_name)
+        return removed_ids
+
     def get_handler_for_command(self, cmd_name: str) -> Optional[Any]:
         hid = self._command_map.get(cmd_name.lower())
         return self._handlers.get(hid) if hid else None
