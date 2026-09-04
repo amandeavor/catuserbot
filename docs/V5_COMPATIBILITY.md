@@ -21,15 +21,15 @@
 
 | Dimension | Aetheris V4 (Legacy) | Aetheris V5 (Current) | Improvement |
 | :--- | :--- | :--- | :--- |
-| **Plugin Architecture** | Monolithic, dynamic `importlib` calls, no generation tracking | Generational `VersionedPluginManager` with atomic pointer swaps | Zero downtime during hot-reload; zero dropped packets |
-| **Task Management** | Fire-and-forget `asyncio.create_task` | Structured concurrency with `JobSupervisor` & `CancellationToken` | Zero task leaks, priority queues, timeout traps |
-| **Rate Limiting** | Ad-hoc `sleep` loops on `FloodWaitError` | `FloodShieldV5` with 4-lane token buckets and circuit breakers | Proactive prevention of MTProto flood bans |
+| **Plugin Architecture** | Monolithic, dynamic `importlib` calls, no generation tracking | Generational `VersionedPluginManager` with atomic pointer swaps | Minimized downtime during hot-reload with atomic pointer swap |
+| **Task Management** | Fire-and-forget `asyncio.create_task` | Structured concurrency with `JobSupervisor` & `CancellationToken` | Bounded concurrency, priority queues, timeout traps |
+| **Rate Limiting** | Ad-hoc `sleep` loops on `FloodWaitError` | `FloodShieldV5` with 4-lane token buckets and circuit breakers | Proactive rate limiting, queue prioritization, and backoff |
 | **Command Parsing** | Whitespace splitting & regex | Streaming POSIX `CommandLexer` with quoted strings and flag clustering | Bash-standard syntax (`-rfv`, `--key="val"`) |
-| **File Transfers** | Single-threaded Telethon downloader | `ChunkPlanner` with dynamic 128KB–1MB chunks and parallel workers | Up to 4x throughput on media files |
+| **File Transfers** | Single-threaded Telethon downloader | `ChunkPlanner` with dynamic 128KB–512KB chunks and parallel workers | Parallel worker chunk scheduling conforming to MTProto 512KB ceiling |
 | **AI Capabilities** | Hardcoded single OpenAI API script | Unified `AIRouterV5` (Gemini, OpenAI, Claude, Ollama) with fallback | Provider failover, sliding context memory |
-| **Security** | Plaintext callback query strings | Cryptographic HMAC-SHA256 opaque tokens with replay expiration | Zero callback forgery or unauthorized state mutation |
-| **Observability** | Plain text console logs | Microsecond `AetherisTracer` spans + Web Dashboard (HTTP/SSE) | Real-time monitoring, CPU/RAM stats, span graphs |
-| **Database Resiliency** | Crashes if PostgreSQL connection drops | Multi-tier with automatic SQLite WAL fallback | 100% uptime regardless of DB hosting status |
+| **Security** | Plaintext callback query strings | Cryptographic HMAC-SHA256 opaque tokens with replay expiration | Cryptographic callback authorization and replay expiration |
+| **Observability** | Plain text console logs | Microsecond `AetherisTracer` spans + Web Dashboard (HTTP/SSE) | Real-time monitoring, CPU/RAM stats, span telemetry |
+| **Database Resiliency** | Crashes if PostgreSQL connection drops | Tiered memory cache with explicit split-brain refusal | Cached reads during transient outages, no silent split-brain corruption |
 
 ---
 

@@ -1,0 +1,10 @@
+{
+  "timestamp": 1788509746.8677826,
+  "status": "SKIPPED_CREDENTIALS_ABSENT",
+  "gate_passed": false,
+  "session_preservation": "NOT LIVE VERIFIED",
+  "basic_mtproto": "NOT RUN",
+  "reason": "Host environment does not have AETHERIS_LIVE_TESTS=1 or live STRING_SESSION/API_HASH configured.",
+  "operations_executed": [],
+  "error": null
+}

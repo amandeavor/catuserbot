@@ -57,8 +57,17 @@ MAINTENANCE_RPC_PREFIXES = (
 
 def is_maintenance_request(request: Any) -> bool:
     """
-    Returns True if request is an MTProto maintenance/heartbeat RPC that must bypass
+    Returns True if request is an MTProto maintenance/session RPC that must bypass
     rate limiting, deduplication, and circuit breaking.
+
+    Architectural Layer Notes (Telethon 1.x):
+    - Client __call__ boundary: GetState, GetDifference, InitConnection, InvokeWithLayer,
+      GetConfig, and GetNearestDc are processed at this level and exempted here to prevent
+      update sync stalls or unnecessary transport reconnects.
+    - Transport boundary (MTProtoSender): MsgsAck, HttpWait, and internal keepalive pings
+      are handled below __call__; they are included defensively in the event of direct invocation.
+    - Exemption rationale: Delaying these requests degrades connection stability and triggers
+      unnecessary transport reconnects, but does not directly cause account bans.
     """
     if request is None:
         return False

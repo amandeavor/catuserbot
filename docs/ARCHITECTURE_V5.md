@@ -5,7 +5,7 @@
 **Aetheris V5** represents a complete architectural evolution of the Aetheris MTProto automation engine (formerly CatUserBot). While retaining 100% backward compatibility for all 139 legacy user plugins, V5 transitions the platform from a monolithic, tightly-coupled scripting bot into a **modular, resilient, high-throughput, and fully observable Telegram automation platform**.
 
 ### Core Tenets of V5
-- **Zero-Downtime Hot-Reloading**: Atomically swapping plugin generations without dropping handlers or leaking tasks.
+- **Atomic Plugin Hot-Reloading**: Atomically swapping plugin generations to prevent handler loss and orphan tasks.
 - **Strict MTProto Flood Protection**: Lane-segmented token buckets, circuit breakers, and exponential jitter backoff (`FloodShieldV5`).
 - **Deterministic Command Parsing**: POSIX-compliant streaming lexer and grammar parser with bash-style quoting and typed flag extraction.
 - **Resilient Background Execution**: Structured concurrency with job supervision, hierarchical cancellation tokens, and priority tiers.
@@ -122,7 +122,7 @@ flowchart TB
   - `NORMAL`: Broadcast messaging, status updates, periodic syncs.
   - `BULK`: Media downloads/uploads, bulk scraping, message purging.
 - **Circuit Breaker**: 3-state state machine (`CLOSED` -> `OPEN` -> `HALF_OPEN`) tracking rolling failure ratios. Automatically fast-fails requests when MTProto limits are threatened.
-- **Token Bucket Rate Limiter**: Independent rate buckets per lane and peer ID preventing burst-induced flood bans.
+- **Token Bucket Rate Limiter**: Independent rate buckets per lane and peer ID preventing burst-induced FloodWait cascades and transport instability.
 - **Exponential Jitter Backoff**: Adds decorrelated random jitter to wait durations when handling `FloodWaitError`.
 
 ### 3.5 POSIX-Compliant Command Parser

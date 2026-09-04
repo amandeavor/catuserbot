@@ -1,0 +1,9 @@
+{
+  "timestamp": 1788509778.6482258,
+  "status": "SKIPPED_CREDENTIALS_ABSENT",
+  "gate_passed": false,
+  "transfer_integrity": "NOT RUN",
+  "reason": "Host environment does not have AETHERIS_LIVE_TESTS=1 or live STRING_SESSION/API_HASH configured.",
+  "stages": [],
+  "error": null
+}

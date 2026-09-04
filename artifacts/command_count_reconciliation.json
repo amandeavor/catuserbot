@@ -1,0 +1,608 @@
+{
+  "baseline_rc1_reported_commands": 396,
+  "rc2_runtime_registered_commands": 495,
+  "net_delta": 99,
+  "unique_command_triggers": 476,
+  "duplicate_command_triggers": 19,
+  "reconciliation_summary": {
+    "newly_introduced_v5_command": 40,
+    "duplicate_discovered_differently": 6,
+    "genuine_command_previously_missed": 53
+  },
+  "reconciled_commands": [
+    {
+      "command": "kickdeleted",
+      "plugin": "admin_nuke_defense",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'admin_nuke_defense': Anti-nuke and rate-limited mass action protections"
+    },
+    {
+      "command": "fakeaction",
+      "plugin": "admin_nuke_defense",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'admin_nuke_defense': Anti-nuke and rate-limited mass action protections"
+    },
+    {
+      "command": "delayspam",
+      "plugin": "admin_nuke_defense",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'admin_nuke_defense': Anti-nuke and rate-limited mass action protections"
+    },
+    {
+      "command": "aetheris",
+      "plugin": "aetheris_suite",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'aetheris_suite': Aetheris core lifecycle and diagnostics"
+    },
+    {
+      "command": "floodtest",
+      "plugin": "aetheris_suite",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'aetheris_suite': Aetheris core lifecycle and diagnostics"
+    },
+    {
+      "command": "quickpurge",
+      "plugin": "aetheris_suite",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'aetheris_suite': Aetheris core lifecycle and diagnostics"
+    },
+    {
+      "command": "setgemini",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "checkgemini",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "ai",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "imagine",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "anime",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "summarize",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "grammar",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "eli5",
+      "plugin": "ai_powerhouse",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ai_powerhouse': AI Router integration and multi-LLM power commands"
+    },
+    {
+      "command": "tempmail",
+      "plugin": "cyber_tools",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'cyber_tools': Network diagnostic and threat intelligence utilities"
+    },
+    {
+      "command": "checkmail",
+      "plugin": "cyber_tools",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'cyber_tools': Network diagnostic and threat intelligence utilities"
+    },
+    {
+      "command": "ip",
+      "plugin": "cyber_tools",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'cyber_tools': Network diagnostic and threat intelligence utilities"
+    },
+    {
+      "command": "lyrics",
+      "plugin": "cyber_tools",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'cyber_tools': Network diagnostic and threat intelligence utilities"
+    },
+    {
+      "command": "weather",
+      "plugin": "cyber_tools",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'cyber_tools': Network diagnostic and threat intelligence utilities"
+    },
+    {
+      "command": "dl",
+      "plugin": "download_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'download_modern': Modern parallel transfer and streaming downloader"
+    },
+    {
+      "command": "song",
+      "plugin": "download_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'download_modern': Modern parallel transfer and streaming downloader"
+    },
+    {
+      "command": "crypto",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "fake",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "qr",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "ss",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "short",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "joke",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "fact",
+      "plugin": "fun_modern",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'fun_modern': Modern interactive multimedia commands"
+    },
+    {
+      "command": "markread",
+      "plugin": "hikka_resilience",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'hikka_resilience': Hikka ecosystem compatibility and resilient sandboxing"
+    },
+    {
+      "command": "leave",
+      "plugin": "hikka_resilience",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'hikka_resilience': Hikka ecosystem compatibility and resilient sandboxing"
+    },
+    {
+      "command": "json",
+      "plugin": "hikka_resilience",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'hikka_resilience': Hikka ecosystem compatibility and resilient sandboxing"
+    },
+    {
+      "command": "math",
+      "plugin": "hikka_resilience",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'hikka_resilience': Hikka ecosystem compatibility and resilient sandboxing"
+    },
+    {
+      "command": "figlet",
+      "plugin": "hikka_resilience",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'hikka_resilience': Hikka ecosystem compatibility and resilient sandboxing"
+    },
+    {
+      "command": "paste",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "cur",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "ud",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "dict",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "country",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "hash",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "b64e",
+      "plugin": "ultroid_power",
+      "classification": "newly_introduced_v5_command",
+      "detail": "New V5 command introduced in plugin 'ultroid_power': Ultroid ecosystem compatibility commands"
+    },
+    {
+      "command": "blur",
+      "plugin": "poto",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'blur' in secondary plugin 'poto'"
+    },
+    {
+      "command": "purgeme",
+      "plugin": "purge",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'purgeme' in secondary plugin 'purge'"
+    },
+    {
+      "command": "flip",
+      "plugin": "social_fun",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'flip' in secondary plugin 'social_fun'"
+    },
+    {
+      "command": "dice",
+      "plugin": "social_fun",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'dice' in secondary plugin 'social_fun'"
+    },
+    {
+      "command": "var",
+      "plugin": "vps",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'var' in secondary plugin 'vps'"
+    },
+    {
+      "command": "reload",
+      "plugin": "vps",
+      "classification": "duplicate_discovered_differently",
+      "detail": "Duplicate registration of trigger 'reload' in secondary plugin 'vps'"
+    },
+    {
+      "command": "aq",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "aluser",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "mal",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "airing",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "manga",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "fillers",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "char",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "akaizoku",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "upcoming",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "aschedule",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "whatanime",
+      "plugin": "anilist",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'anilist' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "msgto",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "addto",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "list",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "listall",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "sendto",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "fwdto",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "rmfrom",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "frmfrom",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "delc",
+      "plugin": "broadcast",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'broadcast' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "spin",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "circle",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "mtoi",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "itos",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "ttf",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "ftt",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "ftoi",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gif",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "nfc",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "itog",
+      "plugin": "fileconverts",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'fileconverts' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gauth",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "greset",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "glist",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gdf",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gabort",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "ugd",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gclear",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gset",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gdown",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gshare",
+      "plugin": "gdrive",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'gdrive' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "baby",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "hbd",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "thanks",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gm",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gnoon",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gn",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gmg",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gmg2",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gmg3",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gnt",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gnt2",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "gnt3",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    },
+    {
+      "command": "hi",
+      "plugin": "greetings",
+      "classification": "genuine_command_previously_missed",
+      "detail": "Legacy command in 'greetings' formatted across multiple lines; missed by naive AST regex in RC1"
+    }
+  ]
+}
