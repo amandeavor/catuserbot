@@ -50,8 +50,9 @@ def get_thumb(name=None, url=None):
 
 
 def main_menu():
-    text = f"𝗖𝗮𝘁𝗨𝘀𝗲𝗿𝗯𝗼𝘁 𝗛𝗲𝗹𝗽𝗲𝗿\
-        \n𝗣𝗿𝗼𝘃𝗶𝗱𝗲𝗱 𝗯𝘆 {mention}"
+    text = f"◈ ─── **A E T H E R I S  C O N T R O L** ─── ◈\
+        \n👤 **Master :** {mention}\
+        \nSelect a module category below to view commands:"
     buttons = [
         (Button.inline("ℹ️ Info", data="check"),),
         (

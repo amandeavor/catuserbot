@@ -11,6 +11,7 @@ from validators.url import url
 
 class Config(object):
     LOGGER = True
+    BOT_NAME = os.environ.get("BOT_NAME", "Aetheris")
     # MUST NEEDED VARS
     # set this value with your name
     ALIVE_NAME = os.environ.get("ALIVE_NAME", None)

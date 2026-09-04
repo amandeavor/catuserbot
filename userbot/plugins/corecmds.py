@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from ..Config import Config
-from ..core import CMD_INFO, PLG_INFO
+from ..core import CMD_INFO, PLG_INFO, task_manager
 from ..helpers.google_tools import chromeDriver
 from ..utils import load_module, remove_plugin
 from . import CMD_HELP, CMD_LIST, SUDO_LIST, catub, edit_delete, edit_or_reply, reply_id
@@ -35,7 +35,7 @@ def plug_checker(plugin):
 
 
 @catub.cat_cmd(
-    pattern="install(?:\s|$)([\s\S]*)",
+    pattern=r"install(?:\s|$)([\s\S]*)",
     command=("install", plugin_category),
     info={
         "header": "To install an external plugin.",
@@ -72,7 +72,7 @@ async def install(event):
 
 
 @catub.cat_cmd(
-    pattern="load(?:\s|$)([\s\S]*)",
+    pattern=r"load(?:\s|$)([\s\S]*)",
     command=("load", plugin_category),
     info={
         "header": "To load a plugin again. if you have unloaded it",
@@ -96,7 +96,90 @@ async def load(event):
 
 
 @catub.cat_cmd(
-    pattern="send(?:\s|$)([\s\S]*)",
+    pattern=r"reload(?:\s|$)([\s\S]*)",
+    command=("reload", plugin_category),
+    info={
+        "header": "Dynamic hot-reload a plugin or all plugins without restarting.",
+        "usage": "{tr}reload [plugin name]",
+        "examples": ["{tr}reload", "{tr}reload ping"],
+    },
+)
+async def reload_cmd(event):
+    "Dynamic hot-reload without downtime"
+    shortname = event.pattern_match.group(1).strip()
+    if shortname:
+        catevent = await edit_or_reply(event, f"◈ `Reloading {shortname}...`")
+        try:
+            with contextlib.suppress(BaseException):
+                remove_plugin(shortname)
+            load_module(shortname)
+            await edit_delete(catevent, f"◈ **Successfully reloaded:** `{shortname}`", 5)
+        except Exception as e:
+            await edit_or_reply(catevent, f"**Failed to reload `{shortname}`:**\n`{e}`")
+    else:
+        catevent = await edit_or_reply(event, "◈ `Dynamic Hot-Reloading all active plugins...`")
+        success = 0
+        failed = []
+        for plg in list(PLG_INFO.keys()):
+            try:
+                with contextlib.suppress(BaseException):
+                    remove_plugin(plg)
+                load_module(plg)
+                success += 1
+            except Exception:
+                failed.append(plg)
+        res = f"◈ **Aetheris Dynamic Reload Complete**\n▸ **Reloaded:** `{success}` plugins"
+        if failed:
+            res += f"\n▸ **Failed:** `{', '.join(failed)}`"
+        await edit_delete(catevent, res, 8)
+
+
+@catub.cat_cmd(
+    pattern="tasks$",
+    command=("tasks", plugin_category),
+    info={
+        "header": "List active background async tasks.",
+        "usage": "{tr}tasks",
+    },
+)
+async def list_tasks_cmd(event):
+    "List active background tasks"
+    tasks = task_manager.list_active_tasks()
+    if not tasks:
+        return await edit_or_reply(event, "◈ **No active background tasks running.**")
+    out = "◈ ─── **A E T H E R I S  T A S K S** ─── ◈\n\n"
+    for t in tasks:
+        out += f"**Task `#{t.id}`** | `{t.name}`\n"
+        out += f"▸ **Runtime:** `{t.duration:.1f}s`"
+        if t.description:
+            out += f" | {t.description}"
+        out += "\n\n"
+    out += f"**Cancel a task:** `{Config.COMMAND_HAND_LER}taskkill <id>`"
+    await edit_or_reply(event, out)
+
+
+@catub.cat_cmd(
+    pattern=r"taskkill(?:\s|$)([\s\S]*)",
+    command=("taskkill", plugin_category),
+    info={
+        "header": "Cancel an active background task by ID.",
+        "usage": "{tr}taskkill <task_id>",
+    },
+)
+async def kill_task_cmd(event):
+    "Cancel an active background task"
+    val = event.pattern_match.group(1).strip()
+    if not val or not val.isdigit():
+        return await edit_delete(event, f"**Provide a valid numeric task ID.** `{Config.COMMAND_HAND_LER}tasks`", 5)
+    tid = int(val)
+    if task_manager.cancel_task(tid):
+        await edit_delete(event, f"◈ **Task `#{tid}` cancelled successfully.**", 5)
+    else:
+        await edit_delete(event, f"**Task `#{tid}` not found or already completed.**", 5)
+
+
+@catub.cat_cmd(
+    pattern=r"send(?:\s|$)([\s\S]*)",
     command=("send", plugin_category),
     info={
         "header": "To upload a plugin file to telegram chat",
@@ -126,7 +209,7 @@ async def send(event):
 
 
 @catub.cat_cmd(
-    pattern="unload(?:\s|$)([\s\S]*)",
+    pattern=r"unload(?:\s|$)([\s\S]*)",
     command=("unload", plugin_category),
     info={
         "header": "To unload a plugin temporarily.",
@@ -146,7 +229,7 @@ async def unload(event):
 
 
 @catub.cat_cmd(
-    pattern="uninstall(?:\s|$)([\s\S]*)",
+    pattern=r"uninstall(?:\s|$)([\s\S]*)",
     command=("uninstall", plugin_category),
     info={
         "header": "To uninstall a plugin temporarily.",
@@ -183,7 +266,7 @@ async def unload(event):
 
 
 @catub.cat_cmd(
-    pattern="logs(?:\s|$)([\s\S]*)",
+    pattern=r"logs(?:\s|$)([\s\S]*)",
     command=("logs", plugin_category),
     info={
         "header": "To send the log of catub",

@@ -1,6 +1,7 @@
-"""Get the info your system. Using .neofetch then .sysd"""
-
-# .spc command is ported from  alfianandaa/ProjectAlf
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# Aetheris UserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Copyright (C) 2026 Aetheris Intelligence Project
+# Licensed under the GNU Affero General Public License v3.0
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import platform
 import sys
@@ -9,7 +10,7 @@ from datetime import datetime
 import psutil
 from telethon import __version__
 
-from userbot import catub
+from userbot import catub, catversion
 
 from ..core.managers import edit_or_reply
 from ..helpers.utils import _catutils
@@ -26,75 +27,81 @@ def get_size(inputbytes, suffix="B"):
 
 
 @catub.cat_cmd(
-    pattern="spc$",
+    pattern="(?:spc|sysinfo)$",
     command=("spc", plugin_category),
     info={
-        "header": "To show system specification.",
-        "usage": "{tr}spc",
+        "header": "To show full hardware and system specifications.",
+        "usage": "{tr}spc or {tr}sysinfo",
     },
 )
 async def psu(event):
     "shows system specification"
     uname = platform.uname()
-    softw = "**System Information**\n"
-    softw += f"`System   : {uname.system}`\n"
-    softw += f"`Release  : {uname.release}`\n"
-    softw += f"`Version  : {uname.version}`\n"
-    softw += f"`Machine  : {uname.machine}`\n"
-    # Boot Time
     boot_time_timestamp = psutil.boot_time()
     bt = datetime.fromtimestamp(boot_time_timestamp)
-    softw += f"`Boot Time: {bt.day}/{bt.month}/{bt.year}  {bt.hour}:{bt.minute}:{bt.second}`\n"
-    # CPU Cores
-    cpuu = "**CPU Info**\n"
-    cpuu += f"`Physical cores   : {str(psutil.cpu_count(logical=False))}" + "`\n"
-    cpuu += f"`Total cores      : {str(psutil.cpu_count(logical=True))}" + "`\n"
-    # CPU frequencies
+    boot_str = bt.strftime("%Y-%m-%d %H:%M:%S")
+
+    # CPU
+    physical_cores = psutil.cpu_count(logical=False) or 1
+    total_cores = psutil.cpu_count(logical=True) or 1
     cpufreq = psutil.cpu_freq()
-    cpuu += f"`Max Frequency    : {cpufreq.max:.2f}Mhz`\n"
-    cpuu += f"`Min Frequency    : {cpufreq.min:.2f}Mhz`\n"
-    cpuu += f"`Current Frequency: {cpufreq.current:.2f}Mhz`\n\n"
-    # CPU usage
-    cpuu += "**CPU Usage Per Core**\n"
-    for i, percentage in enumerate(psutil.cpu_percent(percpu=True)):
-        cpuu += f"`Core {i}  : {percentage}%`\n"
-    cpuu += "**Total CPU Usage**\n"
-    cpuu += f"`All Core: {psutil.cpu_percent()}%`\n"
-    # RAM Usage
+    freq_str = f"{cpufreq.current:.1f} MHz" if cpufreq else "Standard"
+    cpu_percent = psutil.cpu_percent(interval=None)
+
+    # RAM
     svmem = psutil.virtual_memory()
-    memm = "**Memory Usage**\n"
-    memm += f"`Total     : {get_size(svmem.total)}`\n"
-    memm += f"`Available : {get_size(svmem.available)}`\n"
-    memm += f"`Used      : {get_size(svmem.used)}`\n"
-    memm += f"`Percentage: {svmem.percent}%`\n"
-    # Bandwidth Usage
-    bw = "**Bandwith Usage**\n"
-    bw += f"`Upload  : {get_size(psutil.net_io_counters().bytes_sent)}`\n"
-    bw += f"`Download: {get_size(psutil.net_io_counters().bytes_recv)}`\n"
-    help_string = f"{softw}\n"
-    help_string += f"{cpuu}\n"
-    help_string += f"{memm}\n"
-    help_string += f"{bw}\n"
-    help_string += "**Engine Info**\n"
-    help_string += f"`Python {sys.version}`\n"
-    help_string += f"`Telethon {__version__}`"
-    await event.edit(help_string)
+    ram_used = get_size(svmem.used)
+    ram_total = get_size(svmem.total)
+    ram_percent = svmem.percent
+
+    # Bandwidth
+    net = psutil.net_io_counters()
+    net_up = get_size(net.bytes_sent)
+    net_down = get_size(net.bytes_recv)
+
+    # Disk
+    disk = psutil.disk_usage('/')
+    disk_used = get_size(disk.used)
+    disk_total = get_size(disk.total)
+    disk_percent = disk.percent
+
+    out = f"""◈ ─── ❖ **[ A E T H E R I S  S Y S T E M ]** ❖ ─── ◈
+▸ **Platform    :** `{uname.system} {uname.release} ({uname.machine})`
+▸ **Boot Time   :** `{boot_str}`
+
+▸ **CPU Cores   :** `{physical_cores} Physical / {total_cores} Logical`
+▸ **CPU Clock   :** `{freq_str}`
+▸ **CPU Load    :** `{cpu_percent}%`
+
+▸ **Memory      :** `{ram_used} / {ram_total} ({ram_percent}%)`
+▸ **Storage     :** `{disk_used} / {disk_total} ({disk_percent}%)`
+▸ **Bandwidth   :** `▲ {net_up} | ▼ {net_down}`
+
+▸ **Engine      :** `Aetheris v{catversion}`
+▸ **Telethon    :** `v{__version__}`
+▸ **Python      :** `v{sys.version.split()[0]}`
+◈ ───────────────────────────────────── ◈"""
+    await edit_or_reply(event, out)
 
 
 @catub.cat_cmd(
     pattern="cpu$",
     command=("cpu", plugin_category),
     info={
-        "header": "To show cpu information.",
+        "header": "To show cpu model information.",
         "usage": "{tr}cpu",
     },
 )
 async def cpu(event):
     "shows cpu information"
-    cmd = "cat /proc/cpuinfo | grep 'model name'"
-    o = (await _catutils.runcmd(cmd))[0]
+    cmd = "cat /proc/cpuinfo | grep 'model name' | head -n 1"
+    o = (await _catutils.runcmd(cmd))[0].strip()
+    if not o:
+        o = platform.processor() or "Modern Host Processor"
+    else:
+        o = o.split(":", 1)[-1].strip()
     await edit_or_reply(
-        event, f"**[Cat's](tg://need_update_for_some_feature/) CPU Model:**\n{o}"
+        event, f"◈ ─── **A E T H E R I S  C P U** ─── ◈\n▸ **Model :** `{o}`\n◈ ──────────────────────────── ◈"
     )
 
 
@@ -103,16 +110,16 @@ async def cpu(event):
     command=("sysd", plugin_category),
     info={
         "header": "Shows system information using neofetch",
-        "usage": "{tr}cpu",
+        "usage": "{tr}sysd",
     },
 )
 async def sysdetails(sysd):
     "Shows system information using neofetch"
-    catevent = await edit_or_reply(sysd, "`Fetching system information.`")
+    catevent = await edit_or_reply(sysd, "◈ `Fetching Neofetch system diagnostics...`")
     cmd = "git clone https://github.com/dylanaraps/neofetch.git"
     await _catutils.runcmd(cmd)
     neo = "neofetch/neofetch --off --color_blocks off --bold off --cpu_temp C \
                     --cpu_speed on --cpu_cores physical --kernel_shorthand off --stdout"
     a, b, c, d = await _catutils.runcmd(neo)
     result = str(a) + str(b)
-    await edit_or_reply(catevent, f"**Neofetch Result:** `{result}`")
+    await edit_or_reply(catevent, f"◈ ─── **A E T H E R I S  N E O F E T C H** ─── ◈\n`{result}`")

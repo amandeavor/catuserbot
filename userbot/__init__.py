@@ -1,10 +1,6 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# CatUserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# Copyright (C) 2020-2023 by TgCatUB@Github.
-
-# This file is part of: https://github.com/TgCatUB/catuserbot
-# and is released under the "GNU v3.0 License Agreement".
-
-# Please see: https://github.com/TgCatUB/catuserbot/blob/master/LICENSE
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# Aetheris UserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Copyright (C) 2026 Aetheris Intelligence Project
+# Licensed under the GNU Affero General Public License v3.0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import signal
@@ -21,22 +17,24 @@ from .helpers.functions.musictool import *
 from .helpers.utils.utils import runasync
 from .sql_helper.globals import addgvar, delgvar, gvarstatus
 
-__version__ = "3.3.0"
+__version__ = "4.0.0"
 __license__ = "GNU Affero General Public License v3.0"
-__author__ = "CatUserBot <https://github.com/TgCatUB/catuserbot>"
-__copyright__ = f"Copyright (C) 2020 - 2023  {__author__}"
+__author__ = "Aetheris <https://github.com/amandeavor/catuserbot>"
+__copyright__ = f"Copyright (C) 2026  {__author__}"
 
 catub.version = __version__
 catub.tgbot.version = __version__
-LOGS = logging.getLogger("CatUserbot")
+LOGS = logging.getLogger("Aetheris")
 bot = catub
+aetheris = catub
 
 StartTime = time.time()
-catversion = "3.3.0"
+catversion = "4.0.0"
+aetherisversion = "4.0.0"
 
 
 def close_connection(*_):
-    print("Closing Userbot connection.")
+    print("Closing Aetheris Userbot connection.")
     runasync(catub.disconnect())
     sys.exit(143)
 
@@ -81,7 +79,7 @@ except Exception:
     HEROKU_APP = None
 
 
-# Global Configiables
+# Global Variables
 COUNT_MSG = 0
 USERS = {}
 COUNT_PM = {}

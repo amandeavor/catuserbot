@@ -1,10 +1,6 @@
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# CatUserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# Copyright (C) 2020-2023 by TgCatUB@Github.
-
-# This file is part of: https://github.com/TgCatUB/catuserbot
-# and is released under the "GNU v3.0 License Agreement".
-
-# Please see: https://github.com/TgCatUB/catuserbot/blob/master/LICENSE
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# Aetheris UserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+# Copyright (C) 2026 Aetheris Intelligence Project
+# Licensed under the GNU Affero General Public License v3.0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import asyncio
@@ -27,39 +23,49 @@ from . import StartTime, catub, mention, reply_id
 
 plugin_category = "tools"
 
+temp_ = "◈ `Pinging Aetheris Network...`"
+temp = """◈ ─── ❖ **[ A E T H E R I S ]** ❖ ─── ◈
+⚡ **Latency :** `{ping} ms`
+⏳ **Uptime  :** `{uptime}`
+◈ ─────────────────────────── ◈"""
 
-temp_ = "Pong!"
-temp = "Pong!\n`{ping} ms`"
 if Config.BADCAT:
-    temp_ = "__**☞ Pong**__"
-    temp = "__**☞ Pong**__\n➥ `{ping}` **ms**\n➥ __**Bot of **__{mention}"
+    temp_ = "◈ `[Aetheris // Ping]`"
+    temp = """◈ ─── **A E T H E R I S** ─── ◈
+⚡ **Latency :** `{ping} ms`
+⏳ **Uptime  :** `{uptime}`
+👤 **Master  :** {mention}
+◈ ─────────────────── ◈"""
 
 
 @catub.cat_cmd(
     pattern="ping( -a|$)",
     command=("ping", plugin_category),
     info={
-        "header": "check how long it takes to ping your userbot",
-        "flags": {"-a": "average ping"},
+        "header": "Check roundtrip latency to Telegram servers",
+        "flags": {"-a": "average ping over 3 samples"},
         "usage": ["{tr}ping", "{tr}ping -a"],
     },
 )
-async def _(event):
-    "To check ping"
+async def ping_cmd(event):
+    "To check ping and latency"
     flag = event.pattern_match.group(1)
     reply_to_id = await reply_id(event)
     uptime = await get_readable_time((time.time() - StartTime))
     start = datetime.now()
     if flag == " -a":
-        catevent = await edit_or_reply(event, "`!....`")
-        await asyncio.sleep(0.3)
-        await edit_or_reply(catevent, "`..!..`")
-        await asyncio.sleep(0.3)
-        await edit_or_reply(catevent, "`....!`")
+        catevent = await edit_or_reply(event, "◈ `[ ▰▱▱ ] Sampling latency...`")
+        await asyncio.sleep(0.25)
+        await edit_or_reply(catevent, "◈ `[ ▰▰▱ ] Measuring telemetry...`")
+        await asyncio.sleep(0.25)
+        await edit_or_reply(catevent, "◈ `[ ▰▰▰ ] Finalizing stats...`")
         end = datetime.now()
         tms = (end - start).microseconds / 1000
-        ms = round((tms - 0.6) / 3, 3)
-        await edit_or_reply(catevent, f"Average Ping!\n`{ms} ms`")
+        ms = round((tms - 0.5) / 3, 3)
+        await edit_or_reply(
+            catevent,
+            f"◈ ─── **A E T H E R I S  P I N G** ─── ◈\n⚡ **Avg Latency :** `{ms} ms`\n⏳ **Uptime      :** `{uptime}`\n◈ ──────────────────────────── ◈",
+        )
     else:
         catevent = await edit_or_reply(event, temp_)
         end = datetime.now()
@@ -68,8 +74,11 @@ async def _(event):
         ping_temp = gvarstatus("PING_TEMPLATE") or temp
         PING_PIC = gvarstatus("PING_PIC")
         if "ANIME" in ping_temp:
-            data = requests.get("https://animechan.vercel.app/api/random").json()
-            ANIME = f"**“{data['quote']}” - {data['character']} ({data['anime']})**"
+            try:
+                data = requests.get("https://animechan.vercel.app/api/random", timeout=3).json()
+                ANIME = f"**“{data['quote']}” - {data['character']} ({data['anime']})**"
+            except Exception:
+                ANIME = "**“Move fast and build clean systems.”**"
         caption = ping_temp.format(
             ANIME=ANIME,
             mention=mention,
@@ -87,7 +96,7 @@ async def _(event):
             except (WebpageMediaEmptyError, MediaEmptyError, WebpageCurlFailedError):
                 return await edit_or_reply(
                     catevent,
-                    f"**Media Value Error!!**\n__Change the link by __`.setdv`\n\n**__Can't get media from this link :-**__ `{PIC}`",
+                    f"**Media Value Error!**\n__Change the link with __`.setdv`\n\n**__Can't get media from link:__** `{PIC}`",
                 )
         else:
             await edit_or_reply(

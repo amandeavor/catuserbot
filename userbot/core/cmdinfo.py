@@ -189,14 +189,14 @@ async def plugininfo(input_str, event, flag):
 
 
 async def grpinfo():
-    outstr = "**Plugins in Catuserbot are:**\n\n"
-    outstr += f"**👩‍💻 Usage : ** `{cmdprefix}help <plugin name>`\n\n"
+    outstr = "◈ ─── **A E T H E R I S  P L U G I N S** ─── ◈\n\n"
+    outstr += f"**Usage :** `{cmdprefix}help <plugin name>`\n\n"
     category = ["admin", "bot", "fun", "misc", "tools", "utils", "extra"]
     if Config.BADCAT:
         category.append("useless")
     for cat in category:
         plugins = GRP_INFO[cat]
-        outstr += f"**{hemojis[cat]} {cat.title()} **({len(plugins)})\n"
+        outstr += f"**{hemojis.get(cat, '◈')} {cat.title()}** ({len(plugins)})\n"
         for plugin in plugins:
             outstr += f"`{plugin}`  "
         outstr += "\n\n"
@@ -204,18 +204,18 @@ async def grpinfo():
 
 
 async def cmdlist():
-    outstr = "**Total list of Commands in your Catuserbot are :**\n\n"
+    outstr = "◈ ─── **A E T H E R I S  C O M M A N D S** ─── ◈\n\n"
     category = ["admin", "bot", "fun", "misc", "tools", "utils", "extra"]
     if Config.BADCAT:
         category.append("useless")
     for cat in category:
         plugins = GRP_INFO[cat]
-        outstr += f"**{hemojis[cat]} {cat.title()} ** - {len(plugins)}\n\n"
+        outstr += f"**{hemojis.get(cat, '◈')} {cat.title()}** — {len(plugins)} modules\n\n"
         for plugin in plugins:
             cmds = PLG_INFO[plugin]
-            outstr += f"• **{plugin.title()} has {len(cmds)} commands**\n"
+            outstr += f"• **{plugin.title()}** (`{len(cmds)} cmds`)\n"
             for cmd in sorted(cmds):
                 outstr += f"  - `{cmdprefix}{cmd}`\n"
             outstr += "\n"
-    outstr += f"**👩‍💻 Usage : ** `{cmdprefix}help -c <command name>`"
+    outstr += f"**Usage :** `{cmdprefix}help -c <command name>`"
     return outstr

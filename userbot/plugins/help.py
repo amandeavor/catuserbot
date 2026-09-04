@@ -93,7 +93,7 @@ async def _(event):
     else:
         outstr = await cmdlist()
     await edit_or_reply(
-        event, outstr, aslink=True, linktext="Total Commands of Catuserbot are :"
+        event, outstr, aslink=True, linktext="Total Commands of Aetheris are :"
     )
 
 
@@ -113,7 +113,7 @@ async def _(event):
         out = f"**I found {len(found)} command(s) for: **`{cmd}`\n\n{out_str}"
         out += f"\n\n__For more info check {cmdprefix}help -c <command>__"
     else:
-        out = f"I can't find any such command `{cmd}` in CatUserbot"
+        out = f"I can't find any such command `{cmd}` in Aetheris"
     await edit_or_reply(event, out)
 
 

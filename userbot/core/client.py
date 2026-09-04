@@ -31,6 +31,7 @@ from telethon.errors import (
 
 from ..Config import Config
 from ..helpers.utils.events import checking
+from ..helpers.utils.flags import parse_arguments
 from ..helpers.utils.format import paste_message
 from ..helpers.utils.utils import runcmd
 from ..sql_helper.globals import gvarstatus
@@ -47,6 +48,7 @@ from .fasttelethon import download_file, upload_file
 from .logger import logging
 from .managers import edit_delete
 from .pluginManager import get_message_link, restart_script
+from .tasks import task_manager
 
 LOGS = logging.getLogger(__name__)
 
@@ -120,6 +122,18 @@ class CatUserBotClient(TelegramClient):
         def decorator(func):  # sourcery no-metrics
             async def wrapper(check):  # sourcery no-metrics
                 # sourcery skip: low-code-quality
+                try:
+                    raw_text = check.text or ""
+                    cmd_parts = raw_text.split(None, 1)
+                    args_text = cmd_parts[1] if len(cmd_parts) > 1 else ""
+                    flags, positional, remaining = parse_arguments(args_text)
+                    check.flags = flags
+                    check.positional = positional
+                    check.raw_args = remaining
+                except Exception:
+                    check.flags = {}
+                    check.positional = []
+                    check.raw_args = ""
                 if groups_only and not check.is_group:
                     return await edit_delete(check, "`I don't think this is a group.`")
                 if private_only and not check.is_private:
@@ -379,6 +393,12 @@ CatUserBotClient.fast_upload_file = upload_file
 CatUserBotClient.reload = restart_script
 CatUserBotClient.get_msg_link = get_message_link
 CatUserBotClient.check_testcases = checking
+CatUserBotClient.aetheris_cmd = CatUserBotClient.cat_cmd
+CatUserBotClient.add_task = lambda self, name, coro, desc="", chat_id=None: task_manager.add_task(name, coro, desc, chat_id)
+CatUserBotClient.cancel_task = lambda self, tid: task_manager.cancel_task(tid)
+CatUserBotClient.list_tasks = lambda self: task_manager.list_active_tasks()
+AetherisClient = CatUserBotClient
+
 try:
     send_message_check = TelegramClient.send_message
 except AttributeError:
