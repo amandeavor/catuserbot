@@ -74,28 +74,63 @@ async def fake_chat_action(event):
 
 
 @catub.cat_cmd(
-    pattern="delayspam(?:\\s|$)([\\s\\S]*)",
-    command=("delayspam", plugin_category),
+    pattern="raidlock(?:\\s|$)([\\s\\S]*)",
+    command=("raidlock", plugin_category),
     info={
-        "header": "Spam messages with custom delay.",
-        "usage": "{tr}delayspam <count> <delay_seconds> <message>",
+        "header": "Lock down group permissions during a raid or attack.",
+        "usage": "{tr}raidlock <on/off>",
     },
 )
-async def delay_spam_msgs(event):
-    "Delay Spammer"
-    args = event.pattern_match.group(1).strip().split(maxsplit=2)
-    if len(args) < 3:
-        return await edit_delete(event, "`Usage: .delayspam <count> <delay_seconds> <message>`", 5)
+async def raid_lock_chat(event):
+    "Emergency Raid Lock"
+    if event.is_private:
+        return await edit_delete(event, "`This command can only be used in groups!`", 5)
+
+    input_str = event.pattern_match.group(1).strip().lower()
+    if input_str not in ("on", "off"):
+        return await edit_delete(event, "`Usage: .raidlock <on/off>`", 5)
+
+    catevent = await edit_or_reply(event, f"`Engaging raid defense mode: {input_str}...`")
+    from telethon.tl.types import ChatBannedRights
+    from telethon.tl.functions.messages import EditChatDefaultBannedRightsRequest
+
+    if input_str == "on":
+        rights = ChatBannedRights(
+            until_date=None,
+            send_messages=True,
+            send_media=True,
+            send_stickers=True,
+            send_gifs=True,
+            send_games=True,
+            send_inline=True,
+            embed_links=True,
+            send_polls=True,
+            invite_users=True,
+            pin_messages=True,
+            change_info=True,
+        )
+        msg = "🚨 **Raid Lock Engaged!** Default permissions restricted."
+    else:
+        rights = ChatBannedRights(
+            until_date=None,
+            send_messages=False,
+            send_media=False,
+            send_stickers=False,
+            send_gifs=False,
+            send_games=False,
+            send_inline=False,
+            embed_links=False,
+            send_polls=False,
+            invite_users=False,
+            pin_messages=True,
+            change_info=True,
+        )
+        msg = "✅ **Raid Lock Disengaged.** Default permissions restored."
 
     try:
-        count = int(args[0])
-        delay = float(args[1])
-    except ValueError:
-        return await edit_delete(event, "`Count and delay must be numbers!`", 5)
-
-    msg = args[2]
-    await event.delete()
-
-    for _ in range(min(count, 50)):
-        await event.client.send_message(event.chat_id, msg)
-        await asyncio.sleep(delay)
+        await event.client(
+            EditChatDefaultBannedRightsRequest(peer=event.chat_id, banned_rights=rights)
+        )
+        await catevent.edit(msg)
+    except Exception as e:
+        await catevent.edit(f"❌ **Failed to set raid lock:** `{e}`")

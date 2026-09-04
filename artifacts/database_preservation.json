@@ -1,0 +1,102 @@
+{
+  "timestamp": 1788515311.0434105,
+  "status": "PASS",
+  "gate_passed": true,
+  "backend": "sqlite",
+  "storage_mode": "SQLITE",
+  "total_tables": 21,
+  "table_stats": {
+    "antiflood": {
+      "row_count": 0,
+      "columns_count": 4
+    },
+    "blacklist": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "cat_globalcollection": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "cat_globalcollectionjson": {
+      "row_count": 0,
+      "columns_count": 3
+    },
+    "catbroadcast": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "catfilters": {
+      "row_count": 0,
+      "columns_count": 4
+    },
+    "catglobal_list": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "catscheduler": {
+      "row_count": 0,
+      "columns_count": 5
+    },
+    "catsnip": {
+      "row_count": 0,
+      "columns_count": 3
+    },
+    "catwelcome": {
+      "row_count": 0,
+      "columns_count": 4
+    },
+    "chatbot": {
+      "row_count": 0,
+      "columns_count": 6
+    },
+    "gban": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "gdrive": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "globals": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "joinwelcome": {
+      "row_count": 0,
+      "columns_count": 4
+    },
+    "locks": {
+      "row_count": 0,
+      "columns_count": 6
+    },
+    "mute": {
+      "row_count": 0,
+      "columns_count": 2
+    },
+    "no_log_pms": {
+      "row_count": 0,
+      "columns_count": 1
+    },
+    "pmpermit_sql": {
+      "row_count": 0,
+      "columns_count": 5
+    },
+    "warn_settings": {
+      "row_count": 0,
+      "columns_count": 3
+    },
+    "warns": {
+      "row_count": 0,
+      "columns_count": 4
+    }
+  },
+  "safe_gvars_count": 0,
+  "verification_details": {
+    "preserved": true,
+    "tables_before": 21,
+    "tables_after": 21,
+    "issues": []
+  },
+  "error": null
+}

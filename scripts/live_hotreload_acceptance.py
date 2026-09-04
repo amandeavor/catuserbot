@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """
-Aetheris V5 Live MTProto Acceptance Verification Harness.
+Aetheris V5 Live Hot-Reload Acceptance Verification Harness.
 Strictly requires AETHERIS_LIVE_TESTS=1 and valid userbot credentials.
 
-Executes safe, owner-isolated operations in Saved Messages ("me"):
+Safe, Owner-Isolated Verification:
 1. Connect via existing deployed session (supports SQLite .session files or STRING_SESSION)
 2. Verify owner identity strictly against Config.OWNER_ID
-3. Send test message in Saved Messages
-4. Edit test message
-5. Fetch test message
-6. Delete test message (guaranteed cleanup via try...finally)
-7. Perform read-only API request (GetConfigRequest)
-8. Disconnect cleanly without revoking or damaging auth key
-9. Produce sanitized artifact: artifacts/live_mtproto_acceptance.json
+3. Inspect pre-reload handler registration for 'alive' plugin
+4. Execute atomic plugin hot-reload: remove_plugin("alive") -> load_module("alive")
+5. Inspect post-reload handler registration (verifies no handler leaks / duplicates)
+6. Dispatch test trigger in Saved Messages ("me")
+7. Guaranteed try...finally cleanup of remote test probe messages
+8. Disconnect cleanly without revoking session
+9. Produces sanitized artifact: artifacts/live_hotreload_acceptance.json
 """
 
 import argparse
@@ -32,7 +32,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
-LOGS = logging.getLogger("Aetheris.LiveAcceptance")
+LOGS = logging.getLogger("Aetheris.LiveHotReload")
 
 
 def resolve_session(config):
@@ -56,10 +56,21 @@ def resolve_session(config):
     return None, "NONE"
 
 
-async def run_live_acceptance(keep_artifacts: bool = False):
+def count_plugin_handlers(client, plugin_name: str) -> int:
+    """Count registered event builders belonging to a specific plugin module."""
+    mod_name = f"userbot.plugins.{plugin_name}"
+    count = 0
+    if hasattr(client, "_event_builders"):
+        for _, cb in client._event_builders:
+            if getattr(cb, "__module__", "") == mod_name:
+                count += 1
+    return count
+
+
+async def run_live_hotreload(keep_artifacts: bool = False):
     artifacts_dir = ROOT_DIR / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
-    report_file = artifacts_dir / "live_mtproto_acceptance.json"
+    report_file = artifacts_dir / "live_hotreload_acceptance.json"
 
     is_live_enabled = os.environ.get("AETHERIS_LIVE_TESTS") == "1"
 
@@ -72,8 +83,8 @@ async def run_live_acceptance(keep_artifacts: bool = False):
 
     if not is_live_enabled or not has_credentials:
         LOGS.warning(
-            "Live MTProto tests disabled or credentials absent (AETHERIS_LIVE_TESTS=%s, has_api_creds=%s, session_type=%s). "
-            "Skipping live MTProto acceptance.",
+            "Live hot-reload tests disabled or credentials absent (AETHERIS_LIVE_TESTS=%s, has_api_creds=%s, session_type=%s). "
+            "Skipping live hot-reload acceptance.",
             os.environ.get("AETHERIS_LIVE_TESTS"),
             has_api_creds,
             session_type,
@@ -82,19 +93,18 @@ async def run_live_acceptance(keep_artifacts: bool = False):
             "timestamp": time.time(),
             "status": "SKIPPED_CREDENTIALS_ABSENT",
             "gate_passed": False,
-            "session_preservation": "NOT LIVE VERIFIED",
+            "hotreload_integrity": "NOT RUN",
             "session_type": session_type,
-            "basic_mtproto": "NOT RUN",
             "reason": "Host environment does not have AETHERIS_LIVE_TESTS=1 or live session credentials configured.",
-            "operations_executed": [],
+            "operations": [],
             "error": None,
         }
         with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
-        print(f"[!] Wrote skipped live acceptance artifact to {report_file}")
+        print(f"[!] Wrote skipped live hot-reload artifact to {report_file}")
         return False
 
-    # Owner Verification Check
+    # Owner ID Strict Verification
     if not Config.OWNER_ID or int(Config.OWNER_ID) <= 0:
         err_msg = "Config.OWNER_ID is not configured or <= 0. Refusing to run live tests without explicit owner identity."
         LOGS.error(err_msg)
@@ -102,17 +112,17 @@ async def run_live_acceptance(keep_artifacts: bool = False):
             "timestamp": time.time(),
             "status": "FAILED_OWNER_UNSET",
             "gate_passed": False,
-            "session_preservation": "ABORTED_SAFETY",
-            "basic_mtproto": "NOT RUN",
+            "hotreload_integrity": "ABORTED_SAFETY",
+            "session_type": session_type,
             "reason": err_msg,
-            "operations_executed": [],
+            "operations": [],
             "error": err_msg,
         }
         with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
         return False
 
-    from telethon import functions
+    from userbot.utils.pluginmanager import load_module, remove_plugin
 
     operations = []
     t0 = time.perf_counter()
@@ -130,7 +140,7 @@ async def run_live_acceptance(keep_artifacts: bool = False):
         operations.append("connect_existing_session")
 
         if not await client.is_user_authorized():
-            raise PermissionError("Existing session is not authorized or expired! Session preservation failed.")
+            raise PermissionError("Existing session not authorized.")
 
         me = await client.get_me()
         configured_owner = int(Config.OWNER_ID)
@@ -139,57 +149,69 @@ async def run_live_acceptance(keep_artifacts: bool = False):
                 f"Connected user ID {me.id} does not match configured OWNER_ID {configured_owner}!"
             )
         operations.append("verify_owner_identity")
-        LOGS.info("Owner identity verified: ID %s", me.id)
 
-        # 1. Send test message in Saved Messages
+        # 1. Inspect pre-reload handlers
+        load_module("alive")
+        pre_count = count_plugin_handlers(client, "alive")
+        LOGS.info("Pre-reload 'alive' handler count: %d", pre_count)
+        operations.append(f"pre_reload_count_{pre_count}")
+
+        # 2. Execute Atomic Hot-Reload
+        t_rel0 = time.perf_counter()
+        remove_plugin("alive")
+        load_module("alive")
+        rel_ms = round((time.perf_counter() - t_rel0) * 1000.0, 2)
+        operations.append("atomic_plugin_reload")
+        LOGS.info("Executed atomic hot-reload in %.2f ms", rel_ms)
+
+        # 3. Inspect post-reload handlers (must NOT double)
+        post_count = count_plugin_handlers(client, "alive")
+        LOGS.info("Post-reload 'alive' handler count: %d", post_count)
+        operations.append(f"post_reload_count_{post_count}")
+
+        if post_count != pre_count:
+            raise AssertionError(
+                f"Handler leak detected after reload: pre={pre_count}, post={post_count}"
+            )
+
+        # 4. Safe live probe in Saved Messages ("me")
         test_nonce = uuid.uuid4().hex[:8]
-        msg_text = f"◈ [Aetheris V5 Live Acceptance Test Probe: {test_nonce}]"
-        sent_msg = await client.send_message("me", msg_text)
-        operations.append("send_saved_message")
+        probe_text = f"◈ [Aetheris V5 Live Hot-Reload Probe: {test_nonce}]"
+        sent_msg = await client.send_message("me", probe_text)
+        operations.append("send_saved_probe")
 
-        # 2. Edit test message
-        edited_text = f"◈ [Aetheris V5 Live Acceptance Test Probe: {test_nonce} (EDITED)]"
-        await sent_msg.edit(edited_text)
-        operations.append("edit_saved_message")
-
-        # 3. Fetch test message
-        fetched = await client.get_messages("me", ids=sent_msg.id)
-        assert fetched is not None, "Failed to retrieve test message"
-        assert fetched.text == edited_text, "Edited message text mismatch"
-        operations.append("fetch_saved_message")
-
-        # 4. Read-only API RPC call
-        cfg = await client(functions.help.GetConfigRequest())
-        assert cfg is not None, "GetConfigRequest returned None"
-        operations.append("execute_get_config_rpc")
+        # Edit probe to verify event loop responsive
+        await sent_msg.edit(f"{probe_text} [VERIFIED RESPONSIVE]")
+        operations.append("edit_saved_probe")
 
         dur_ms = round((time.perf_counter() - t0) * 1000.0, 2)
         report = {
             "timestamp": time.time(),
             "status": "LIVE_VERIFIED_PASS",
             "gate_passed": True,
-            "session_preservation": "LIVE PASS",
+            "hotreload_integrity": "LIVE PASS",
             "session_type": session_type,
-            "basic_mtproto": "PASS",
-            "duration_ms": dur_ms,
-            "operations_executed": operations,
+            "target_plugin": "alive",
+            "pre_reload_handlers": pre_count,
+            "post_reload_handlers": post_count,
+            "reload_latency_ms": rel_ms,
+            "total_duration_ms": dur_ms,
+            "operations": operations,
             "error": None,
         }
         with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
-        LOGS.info("Live MTProto acceptance test PASSED in %.2f ms", dur_ms)
+        LOGS.info("Live Hot-Reload acceptance test PASSED in %.2f ms", dur_ms)
         return True
 
     except Exception as exc:
-        LOGS.error("Live MTProto acceptance failed: %s", exc)
+        LOGS.error("Live Hot-Reload acceptance failed: %s", exc)
         report = {
             "timestamp": time.time(),
             "status": "FAILED",
             "gate_passed": False,
-            "session_preservation": "FAILED",
-            "session_type": session_type,
-            "basic_mtproto": "FAILED",
-            "operations_executed": operations,
+            "hotreload_integrity": "FAILED",
+            "operations": operations,
             "error": str(exc),
         }
         with open(report_file, "w", encoding="utf-8") as f:
@@ -201,29 +223,28 @@ async def run_live_acceptance(keep_artifacts: bool = False):
         if sent_msg and not keep_artifacts and client and client.is_connected():
             try:
                 await sent_msg.delete()
-                operations.append("cleanup_saved_message")
-                LOGS.info("Cleaned up live test probe message from Saved Messages")
+                operations.append("cleanup_probe_message")
+                LOGS.info("Deleted live hot-reload probe message from Saved Messages")
             except Exception as e:
-                LOGS.warning("Failed to delete test probe message: %s", e)
+                LOGS.warning("Failed to delete probe message: %s", e)
 
         # Disconnect cleanly without revoking session
         if client and client.is_connected():
             try:
                 await client.disconnect()
-                operations.append("clean_disconnect")
             except Exception as e:
                 LOGS.warning("Error during clean disconnect: %s", e)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Aetheris V5 Live MTProto Acceptance Harness")
+    parser = argparse.ArgumentParser(description="Aetheris V5 Live Hot-Reload Acceptance Harness")
     parser.add_argument(
         "--keep-artifacts",
         action="store_true",
         help="Do not delete probe messages from Saved Messages",
     )
     args = parser.parse_args()
-    asyncio.run(run_live_acceptance(keep_artifacts=args.keep_artifacts))
+    asyncio.run(run_live_hotreload(keep_artifacts=args.keep_artifacts))
 
 
 if __name__ == "__main__":

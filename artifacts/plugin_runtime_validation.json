@@ -1,5 +1,5 @@
 {
-  "timestamp": 1788504777.0761225,
+  "timestamp": 1788514991.2617488,
   "total_plugins": 138,
   "passed": 138,
   "failed": 0,
@@ -14,7 +14,7 @@
         "selfdestruct"
       ],
       "commands_count": 2,
-      "duration_ms": 495.12,
+      "duration_ms": 479.26,
       "unbound_clean": true,
       "error": null
     },
@@ -35,7 +35,7 @@
         "undlt"
       ],
       "commands_count": 11,
-      "duration_ms": 2143.06,
+      "duration_ms": 2225.04,
       "unbound_clean": true,
       "error": null
     },
@@ -45,10 +45,10 @@
       "commands": [
         "kickdeleted",
         "fakeaction",
-        "delayspam"
+        "raidlock"
       ],
       "commands_count": 3,
-      "duration_ms": 44.65,
+      "duration_ms": 76.53,
       "unbound_clean": true,
       "error": null
     },
@@ -61,7 +61,7 @@
         "quickpurge"
       ],
       "commands_count": 3,
-      "duration_ms": 68.43,
+      "duration_ms": 33.44,
       "unbound_clean": true,
       "error": null
     },
@@ -73,7 +73,7 @@
         "mafk"
       ],
       "commands_count": 2,
-      "duration_ms": 36.16,
+      "duration_ms": 42.36,
       "unbound_clean": true,
       "error": null
     },
@@ -91,7 +91,7 @@
         "eli5"
       ],
       "commands_count": 8,
-      "duration_ms": 127.34,
+      "duration_ms": 128.35,
       "unbound_clean": true,
       "error": null
     },
@@ -103,7 +103,7 @@
         "gentxt"
       ],
       "commands_count": 2,
-      "duration_ms": 116.82,
+      "duration_ms": 120.23,
       "unbound_clean": true,
       "error": null
     },
@@ -115,7 +115,7 @@
         "ialive"
       ],
       "commands_count": 2,
-      "duration_ms": 25.07,
+      "duration_ms": 23.95,
       "unbound_clean": true,
       "error": null
     },
@@ -129,7 +129,7 @@
         "twrp"
       ],
       "commands_count": 4,
-      "duration_ms": 45.82,
+      "duration_ms": 50.56,
       "unbound_clean": true,
       "error": null
     },
@@ -151,7 +151,7 @@
         "whatanime"
       ],
       "commands_count": 12,
-      "duration_ms": 168.81,
+      "duration_ms": 164.93,
       "unbound_clean": true,
       "error": null
     },
@@ -162,7 +162,7 @@
         "setflood"
       ],
       "commands_count": 1,
-      "duration_ms": 26.01,
+      "duration_ms": 72.63,
       "unbound_clean": true,
       "error": null
     },
@@ -174,7 +174,7 @@
         "spamcheck"
       ],
       "commands_count": 2,
-      "duration_ms": 31.94,
+      "duration_ms": 56.35,
       "unbound_clean": true,
       "error": null
     },
@@ -185,7 +185,7 @@
         "app"
       ],
       "commands_count": 1,
-      "duration_ms": 42.08,
+      "duration_ms": 21.51,
       "unbound_clean": true,
       "error": null
     },
@@ -199,7 +199,7 @@
         "untar"
       ],
       "commands_count": 4,
-      "duration_ms": 63.61,
+      "duration_ms": 105.91,
       "unbound_clean": true,
       "error": null
     },
@@ -218,7 +218,7 @@
         "end"
       ],
       "commands_count": 9,
-      "duration_ms": 141.49,
+      "duration_ms": 111.62,
       "unbound_clean": true,
       "error": null
     },
@@ -232,7 +232,7 @@
         "listblkchats"
       ],
       "commands_count": 4,
-      "duration_ms": 48.14,
+      "duration_ms": 77.97,
       "unbound_clean": true,
       "error": null
     },
@@ -245,7 +245,7 @@
         "listblacklist"
       ],
       "commands_count": 3,
-      "duration_ms": 90.28,
+      "duration_ms": 101.04,
       "unbound_clean": true,
       "error": null
     },
@@ -264,7 +264,7 @@
         "delc"
       ],
       "commands_count": 9,
-      "duration_ms": 121.65,
+      "duration_ms": 192.69,
       "unbound_clean": true,
       "error": null
     },
@@ -276,7 +276,7 @@
         "cbutton"
       ],
       "commands_count": 2,
-      "duration_ms": 40.02,
+      "duration_ms": 19.1,
       "unbound_clean": true,
       "error": null
     },
@@ -287,7 +287,7 @@
         "calc"
       ],
       "commands_count": 1,
-      "duration_ms": 32.72,
+      "duration_ms": 10.3,
       "unbound_clean": true,
       "error": null
     },
@@ -303,7 +303,7 @@
         "kargb"
       ],
       "commands_count": 6,
-      "duration_ms": 70.34,
+      "duration_ms": 111.66,
       "unbound_clean": true,
       "error": null
     },
@@ -314,7 +314,7 @@
         "chain"
       ],
       "commands_count": 1,
-      "duration_ms": 11.63,
+      "duration_ms": 13.79,
       "unbound_clean": true,
       "error": null
     },
@@ -326,7 +326,7 @@
         "geta"
       ],
       "commands_count": 2,
-      "duration_ms": 23.01,
+      "duration_ms": 18.5,
       "unbound_clean": true,
       "error": null
     },
@@ -340,7 +340,7 @@
         "listai"
       ],
       "commands_count": 4,
-      "duration_ms": 59.34,
+      "duration_ms": 125.86,
       "unbound_clean": true,
       "error": null
     },
@@ -354,7 +354,7 @@
         "wttr"
       ],
       "commands_count": 4,
-      "duration_ms": 41.66,
+      "duration_ms": 39.53,
       "unbound_clean": true,
       "error": null
     },
@@ -366,7 +366,7 @@
         "revert"
       ],
       "commands_count": 2,
-      "duration_ms": 62.76,
+      "duration_ms": 48.24,
       "unbound_clean": true,
       "error": null
     },
@@ -377,7 +377,7 @@
         "collage"
       ],
       "commands_count": 1,
-      "duration_ms": 14.87,
+      "duration_ms": 27.96,
       "unbound_clean": true,
       "error": null
     },
@@ -396,7 +396,7 @@
         "logs"
       ],
       "commands_count": 9,
-      "duration_ms": 145.01,
+      "duration_ms": 105.99,
       "unbound_clean": true,
       "error": null
     },
@@ -407,7 +407,7 @@
         "create"
       ],
       "commands_count": 1,
-      "duration_ms": 17.14,
+      "duration_ms": 41.81,
       "unbound_clean": true,
       "error": null
     },
@@ -419,7 +419,7 @@
         "delcustom"
       ],
       "commands_count": 2,
-      "duration_ms": 21.55,
+      "duration_ms": 30.91,
       "unbound_clean": true,
       "error": null
     },
@@ -434,7 +434,7 @@
         "weather"
       ],
       "commands_count": 5,
-      "duration_ms": 63.48,
+      "duration_ms": 49.21,
       "unbound_clean": true,
       "error": null
     },
@@ -446,7 +446,7 @@
         "meaning"
       ],
       "commands_count": 2,
-      "duration_ms": 20.94,
+      "duration_ms": 42.63,
       "unbound_clean": true,
       "error": null
     },
@@ -457,7 +457,7 @@
         "direct"
       ],
       "commands_count": 1,
-      "duration_ms": 13.94,
+      "duration_ms": 34.4,
       "unbound_clean": true,
       "error": null
     },
@@ -469,7 +469,7 @@
         "dlto"
       ],
       "commands_count": 2,
-      "duration_ms": 20.8,
+      "duration_ms": 29.55,
       "unbound_clean": true,
       "error": null
     },
@@ -481,7 +481,7 @@
         "song"
       ],
       "commands_count": 2,
-      "duration_ms": 22.57,
+      "duration_ms": 21.86,
       "unbound_clean": true,
       "error": null
     },
@@ -497,7 +497,7 @@
         "bowl"
       ],
       "commands_count": 6,
-      "duration_ms": 95.96,
+      "duration_ms": 98.3,
       "unbound_clean": true,
       "error": null
     },
@@ -510,7 +510,7 @@
         "inspect"
       ],
       "commands_count": 3,
-      "duration_ms": 31.63,
+      "duration_ms": 50.39,
       "unbound_clean": true,
       "error": null
     },
@@ -525,7 +525,7 @@
         "when"
       ],
       "commands_count": 5,
-      "duration_ms": 106.79,
+      "duration_ms": 63.94,
       "unbound_clean": true,
       "error": null
     },
@@ -534,7 +534,7 @@
       "status": "PASS",
       "commands": [],
       "commands_count": 0,
-      "duration_ms": 0.88,
+      "duration_ms": 0.7,
       "unbound_clean": true,
       "error": null
     },
@@ -547,7 +547,7 @@
         "padmin"
       ],
       "commands_count": 3,
-      "duration_ms": 36.46,
+      "duration_ms": 27.98,
       "unbound_clean": true,
       "error": null
     },
@@ -566,7 +566,7 @@
         "fstat"
       ],
       "commands_count": 9,
-      "duration_ms": 152.78,
+      "duration_ms": 143.28,
       "unbound_clean": true,
       "error": null
     },
@@ -581,7 +581,7 @@
         "ffmpegclear"
       ],
       "commands_count": 5,
-      "duration_ms": 71.47,
+      "duration_ms": 89.58,
       "unbound_clean": true,
       "error": null
     },
@@ -601,7 +601,7 @@
         "itog"
       ],
       "commands_count": 10,
-      "duration_ms": 159.34,
+      "duration_ms": 151.35,
       "unbound_clean": true,
       "error": null
     },
@@ -616,7 +616,7 @@
         "mvto"
       ],
       "commands_count": 5,
-      "duration_ms": 107.21,
+      "duration_ms": 63.92,
       "unbound_clean": true,
       "error": null
     },
@@ -628,7 +628,7 @@
         "userfs"
       ],
       "commands_count": 2,
-      "duration_ms": 25.57,
+      "duration_ms": 18.68,
       "unbound_clean": true,
       "error": null
     },
@@ -639,7 +639,7 @@
         "filext"
       ],
       "commands_count": 1,
-      "duration_ms": 11.89,
+      "duration_ms": 19.71,
       "unbound_clean": true,
       "error": null
     },
@@ -653,7 +653,7 @@
         "rmfilters"
       ],
       "commands_count": 4,
-      "duration_ms": 49.7,
+      "duration_ms": 107.26,
       "unbound_clean": true,
       "error": null
     },
@@ -666,7 +666,7 @@
         "fpost"
       ],
       "commands_count": 3,
-      "duration_ms": 32.31,
+      "duration_ms": 29.23,
       "unbound_clean": true,
       "error": null
     },
@@ -678,7 +678,7 @@
         "deepfry"
       ],
       "commands_count": 2,
-      "duration_ms": 19.62,
+      "duration_ms": 51.16,
       "unbound_clean": true,
       "error": null
     },
@@ -695,7 +695,7 @@
         "fact"
       ],
       "commands_count": 7,
-      "duration_ms": 101.72,
+      "duration_ms": 92.47,
       "unbound_clean": true,
       "error": null
     },
@@ -711,7 +711,7 @@
         "gkick"
       ],
       "commands_count": 6,
-      "duration_ms": 87.34,
+      "duration_ms": 158.43,
       "unbound_clean": true,
       "error": null
     },
@@ -731,7 +731,7 @@
         "gshare"
       ],
       "commands_count": 10,
-      "duration_ms": 195.88,
+      "duration_ms": 217.51,
       "unbound_clean": true,
       "error": null
     },
@@ -742,7 +742,7 @@
         "id"
       ],
       "commands_count": 1,
-      "duration_ms": 21.13,
+      "duration_ms": 20.44,
       "unbound_clean": true,
       "error": null
     },
@@ -753,7 +753,7 @@
         "gifs"
       ],
       "commands_count": 1,
-      "duration_ms": 12.78,
+      "duration_ms": 21.57,
       "unbound_clean": true,
       "error": null
     },
@@ -766,7 +766,7 @@
         "commit"
       ],
       "commands_count": 3,
-      "duration_ms": 32.82,
+      "duration_ms": 29.15,
       "unbound_clean": true,
       "error": null
     },
@@ -777,7 +777,7 @@
         "glitch"
       ],
       "commands_count": 1,
-      "duration_ms": 18.78,
+      "duration_ms": 9.95,
       "unbound_clean": true,
       "error": null
     },
@@ -792,7 +792,7 @@
         "google"
       ],
       "commands_count": 5,
-      "duration_ms": 119.23,
+      "duration_ms": 90.73,
       "unbound_clean": true,
       "error": null
     },
@@ -803,7 +803,7 @@
         "gps"
       ],
       "commands_count": 1,
-      "duration_ms": 20.96,
+      "duration_ms": 13.0,
       "unbound_clean": true,
       "error": null
     },
@@ -830,7 +830,7 @@
         "sprinkle"
       ],
       "commands_count": 17,
-      "duration_ms": 317.58,
+      "duration_ms": 211.76,
       "unbound_clean": true,
       "error": null
     },
@@ -846,7 +846,7 @@
         "ikuck"
       ],
       "commands_count": 6,
-      "duration_ms": 102.22,
+      "duration_ms": 56.44,
       "unbound_clean": true,
       "error": null
     },
@@ -861,7 +861,7 @@
         "grpstats"
       ],
       "commands_count": 5,
-      "duration_ms": 99.34,
+      "duration_ms": 49.49,
       "unbound_clean": true,
       "error": null
     },
@@ -873,7 +873,7 @@
         "hbase"
       ],
       "commands_count": 2,
-      "duration_ms": 19.87,
+      "duration_ms": 21.13,
       "unbound_clean": true,
       "error": null
     },
@@ -887,7 +887,7 @@
         "dc"
       ],
       "commands_count": 4,
-      "duration_ms": 51.67,
+      "duration_ms": 63.16,
       "unbound_clean": true,
       "error": null
     },
@@ -901,7 +901,7 @@
         "buildpack"
       ],
       "commands_count": 4,
-      "duration_ms": 82.68,
+      "duration_ms": 94.78,
       "unbound_clean": true,
       "error": null
     },
@@ -916,7 +916,7 @@
         "figlet"
       ],
       "commands_count": 5,
-      "duration_ms": 58.42,
+      "duration_ms": 48.92,
       "unbound_clean": true,
       "error": null
     },
@@ -927,7 +927,7 @@
         "blur"
       ],
       "commands_count": 1,
-      "duration_ms": 34.88,
+      "duration_ms": 17.34,
       "unbound_clean": true,
       "error": null
     },
@@ -938,7 +938,7 @@
         "img"
       ],
       "commands_count": 1,
-      "duration_ms": 25.25,
+      "duration_ms": 22.62,
       "unbound_clean": true,
       "error": null
     },
@@ -949,7 +949,7 @@
         "invite"
       ],
       "commands_count": 1,
-      "duration_ms": 20.18,
+      "duration_ms": 41.4,
       "unbound_clean": true,
       "error": null
     },
@@ -961,7 +961,7 @@
         "yaml"
       ],
       "commands_count": 2,
-      "duration_ms": 20.74,
+      "duration_ms": 32.02,
       "unbound_clean": true,
       "error": null
     },
@@ -974,7 +974,7 @@
         "lastlog"
       ],
       "commands_count": 3,
-      "duration_ms": 34.61,
+      "duration_ms": 34.23,
       "unbound_clean": true,
       "error": null
     },
@@ -994,7 +994,7 @@
         "archive"
       ],
       "commands_count": 10,
-      "duration_ms": 159.92,
+      "duration_ms": 150.74,
       "unbound_clean": true,
       "error": null
     },
@@ -1010,7 +1010,7 @@
         "uperm"
       ],
       "commands_count": 6,
-      "duration_ms": 135.29,
+      "duration_ms": 143.69,
       "unbound_clean": true,
       "error": null
     },
@@ -1025,7 +1025,7 @@
         "grplog"
       ],
       "commands_count": 5,
-      "duration_ms": 98.23,
+      "duration_ms": 138.5,
       "unbound_clean": true,
       "error": null
     },
@@ -1039,7 +1039,7 @@
         "lvar"
       ],
       "commands_count": 4,
-      "duration_ms": 98.88,
+      "duration_ms": 43.74,
       "unbound_clean": true,
       "error": null
     },
@@ -1050,7 +1050,7 @@
         "lyrics"
       ],
       "commands_count": 1,
-      "duration_ms": 13.67,
+      "duration_ms": 19.84,
       "unbound_clean": true,
       "error": null
     },
@@ -1059,7 +1059,7 @@
       "status": "PASS",
       "commands": [],
       "commands_count": 0,
-      "duration_ms": 23.65,
+      "duration_ms": 39.85,
       "unbound_clean": true,
       "error": null
     },
@@ -1070,7 +1070,7 @@
         "minfo"
       ],
       "commands_count": 1,
-      "duration_ms": 15.52,
+      "duration_ms": 12.17,
       "unbound_clean": true,
       "error": null
     },
@@ -1081,7 +1081,7 @@
         "mega"
       ],
       "commands_count": 1,
-      "duration_ms": 22.46,
+      "duration_ms": 10.57,
       "unbound_clean": true,
       "error": null
     },
@@ -1102,7 +1102,7 @@
         "frame"
       ],
       "commands_count": 11,
-      "duration_ms": 195.27,
+      "duration_ms": 143.42,
       "unbound_clean": true,
       "error": null
     },
@@ -1115,7 +1115,7 @@
         "mention"
       ],
       "commands_count": 3,
-      "duration_ms": 55.61,
+      "duration_ms": 43.79,
       "unbound_clean": true,
       "error": null
     },
@@ -1128,7 +1128,7 @@
         "nb"
       ],
       "commands_count": 3,
-      "duration_ms": 37.1,
+      "duration_ms": 32.24,
       "unbound_clean": true,
       "error": null
     },
@@ -1139,7 +1139,7 @@
         "detect"
       ],
       "commands_count": 1,
-      "duration_ms": 28.55,
+      "duration_ms": 12.46,
       "unbound_clean": true,
       "error": null
     },
@@ -1151,7 +1151,7 @@
         "tocr"
       ],
       "commands_count": 2,
-      "duration_ms": 60.5,
+      "duration_ms": 20.76,
       "unbound_clean": true,
       "error": null
     },
@@ -1163,7 +1163,7 @@
         "dalle"
       ],
       "commands_count": 2,
-      "duration_ms": 29.9,
+      "duration_ms": 21.14,
       "unbound_clean": true,
       "error": null
     },
@@ -1178,7 +1178,7 @@
         "paster"
       ],
       "commands_count": 5,
-      "duration_ms": 135.75,
+      "duration_ms": 138.7,
       "unbound_clean": true,
       "error": null
     },
@@ -1189,7 +1189,7 @@
         "ping"
       ],
       "commands_count": 1,
-      "duration_ms": 13.94,
+      "duration_ms": 11.46,
       "unbound_clean": true,
       "error": null
     },
@@ -1207,7 +1207,7 @@
         "listapproved"
       ],
       "commands_count": 8,
-      "duration_ms": 129.45,
+      "duration_ms": 172.65,
       "unbound_clean": true,
       "error": null
     },
@@ -1218,7 +1218,7 @@
         "poll"
       ],
       "commands_count": 1,
-      "duration_ms": 37.72,
+      "duration_ms": 21.08,
       "unbound_clean": true,
       "error": null
     },
@@ -1230,7 +1230,7 @@
         "blur"
       ],
       "commands_count": 2,
-      "duration_ms": 36.75,
+      "duration_ms": 58.41,
       "unbound_clean": true,
       "error": null
     },
@@ -1244,7 +1244,7 @@
         "notify"
       ],
       "commands_count": 4,
-      "duration_ms": 77.96,
+      "duration_ms": 42.28,
       "unbound_clean": true,
       "error": null
     },
@@ -1257,7 +1257,7 @@
         "listpwel"
       ],
       "commands_count": 3,
-      "duration_ms": 55.42,
+      "duration_ms": 110.97,
       "unbound_clean": true,
       "error": null
     },
@@ -1274,7 +1274,7 @@
         "myusernames"
       ],
       "commands_count": 7,
-      "duration_ms": 173.2,
+      "duration_ms": 79.02,
       "unbound_clean": true,
       "error": null
     },
@@ -1290,7 +1290,7 @@
         "upurge"
       ],
       "commands_count": 6,
-      "duration_ms": 223.66,
+      "duration_ms": 114.53,
       "unbound_clean": true,
       "error": null
     },
@@ -1303,7 +1303,7 @@
         "qbot"
       ],
       "commands_count": 3,
-      "duration_ms": 137.75,
+      "duration_ms": 54.69,
       "unbound_clean": true,
       "error": null
     },
@@ -1314,7 +1314,7 @@
         "reddit"
       ],
       "commands_count": 1,
-      "duration_ms": 37.15,
+      "duration_ms": 14.65,
       "unbound_clean": true,
       "error": null
     },
@@ -1325,7 +1325,7 @@
         "rmbg"
       ],
       "commands_count": 1,
-      "duration_ms": 26.99,
+      "duration_ms": 19.78,
       "unbound_clean": true,
       "error": null
     },
@@ -1336,7 +1336,7 @@
         "rnup"
       ],
       "commands_count": 1,
-      "duration_ms": 65.2,
+      "duration_ms": 38.25,
       "unbound_clean": true,
       "error": null
     },
@@ -1347,7 +1347,7 @@
         "sg"
       ],
       "commands_count": 1,
-      "duration_ms": 35.49,
+      "duration_ms": 23.94,
       "unbound_clean": true,
       "error": null
     },
@@ -1360,7 +1360,7 @@
         "myschedule"
       ],
       "commands_count": 3,
-      "duration_ms": 118.74,
+      "duration_ms": 59.23,
       "unbound_clean": true,
       "error": null
     },
@@ -1372,7 +1372,7 @@
         "imdb"
       ],
       "commands_count": 2,
-      "duration_ms": 54.2,
+      "duration_ms": 35.47,
       "unbound_clean": true,
       "error": null
     },
@@ -1384,7 +1384,7 @@
         "scapture"
       ],
       "commands_count": 2,
-      "duration_ms": 51.44,
+      "duration_ms": 60.93,
       "unbound_clean": true,
       "error": null
     },
@@ -1395,7 +1395,7 @@
         "sed"
       ],
       "commands_count": 1,
-      "duration_ms": 21.54,
+      "duration_ms": 15.81,
       "unbound_clean": true,
       "error": null
     },
@@ -1407,7 +1407,7 @@
         "selfdm"
       ],
       "commands_count": 2,
-      "duration_ms": 88.31,
+      "duration_ms": 24.91,
       "unbound_clean": true,
       "error": null
     },
@@ -1420,7 +1420,7 @@
         "snipd"
       ],
       "commands_count": 3,
-      "duration_ms": 79.97,
+      "duration_ms": 106.41,
       "unbound_clean": true,
       "error": null
     },
@@ -1435,7 +1435,7 @@
         "dice"
       ],
       "commands_count": 5,
-      "duration_ms": 151.53,
+      "duration_ms": 56.23,
       "unbound_clean": true,
       "error": null
     },
@@ -1449,7 +1449,7 @@
         "song2"
       ],
       "commands_count": 4,
-      "duration_ms": 51.38,
+      "duration_ms": 88.42,
       "unbound_clean": true,
       "error": null
     },
@@ -1465,7 +1465,7 @@
         "rspam"
       ],
       "commands_count": 6,
-      "duration_ms": 330.68,
+      "duration_ms": 71.07,
       "unbound_clean": true,
       "error": null
     },
@@ -1476,7 +1476,7 @@
         "speedtest"
       ],
       "commands_count": 1,
-      "duration_ms": 24.41,
+      "duration_ms": 18.25,
       "unbound_clean": true,
       "error": null
     },
@@ -1492,7 +1492,7 @@
         "now"
       ],
       "commands_count": 6,
-      "duration_ms": 158.01,
+      "duration_ms": 116.71,
       "unbound_clean": true,
       "error": null
     },
@@ -1504,7 +1504,7 @@
         "ustat"
       ],
       "commands_count": 2,
-      "duration_ms": 100.98,
+      "duration_ms": 37.18,
       "unbound_clean": true,
       "error": null
     },
@@ -1515,7 +1515,7 @@
         "saved"
       ],
       "commands_count": 1,
-      "duration_ms": 16.87,
+      "duration_ms": 23.43,
       "unbound_clean": true,
       "error": null
     },
@@ -1535,7 +1535,7 @@
         "gandhi"
       ],
       "commands_count": 10,
-      "duration_ms": 193.37,
+      "duration_ms": 163.5,
       "unbound_clean": true,
       "error": null
     },
@@ -1551,7 +1551,7 @@
         "stickers"
       ],
       "commands_count": 6,
-      "duration_ms": 136.45,
+      "duration_ms": 113.2,
       "unbound_clean": true,
       "error": null
     },
@@ -1562,7 +1562,7 @@
         "stt"
       ],
       "commands_count": 1,
-      "duration_ms": 16.79,
+      "duration_ms": 16.04,
       "unbound_clean": true,
       "error": null
     },
@@ -1579,7 +1579,7 @@
         "vscmds"
       ],
       "commands_count": 7,
-      "duration_ms": 173.71,
+      "duration_ms": 116.72,
       "unbound_clean": true,
       "error": null
     },
@@ -1592,7 +1592,7 @@
         "sysd"
       ],
       "commands_count": 3,
-      "duration_ms": 53.39,
+      "duration_ms": 44.58,
       "unbound_clean": true,
       "error": null
     },
@@ -1604,7 +1604,7 @@
         "tban"
       ],
       "commands_count": 2,
-      "duration_ms": 72.18,
+      "duration_ms": 22.25,
       "unbound_clean": true,
       "error": null
     },
@@ -1616,7 +1616,7 @@
         "ctg"
       ],
       "commands_count": 2,
-      "duration_ms": 34.72,
+      "duration_ms": 31.3,
       "unbound_clean": true,
       "error": null
     },
@@ -1629,7 +1629,7 @@
         "getthumb"
       ],
       "commands_count": 3,
-      "duration_ms": 51.43,
+      "duration_ms": 82.43,
       "unbound_clean": true,
       "error": null
     },
@@ -1641,7 +1641,7 @@
         "stime"
       ],
       "commands_count": 2,
-      "duration_ms": 181.42,
+      "duration_ms": 24.58,
       "unbound_clean": true,
       "error": null
     },
@@ -1661,7 +1661,7 @@
         "xkcd"
       ],
       "commands_count": 10,
-      "duration_ms": 652.61,
+      "duration_ms": 161.08,
       "unbound_clean": true,
       "error": null
     },
@@ -1672,7 +1672,7 @@
         "otransfer"
       ],
       "commands_count": 1,
-      "duration_ms": 46.39,
+      "duration_ms": 12.55,
       "unbound_clean": true,
       "error": null
     },
@@ -1685,7 +1685,7 @@
         "lang"
       ],
       "commands_count": 3,
-      "duration_ms": 117.28,
+      "duration_ms": 52.37,
       "unbound_clean": true,
       "error": null
     },
@@ -1699,7 +1699,7 @@
         "phub"
       ],
       "commands_count": 4,
-      "duration_ms": 236.55,
+      "duration_ms": 38.24,
       "unbound_clean": true,
       "error": null
     },
@@ -1710,7 +1710,7 @@
         "tts"
       ],
       "commands_count": 1,
-      "duration_ms": 47.24,
+      "duration_ms": 12.45,
       "unbound_clean": true,
       "error": null
     },
@@ -1727,7 +1727,7 @@
         "b64e"
       ],
       "commands_count": 7,
-      "duration_ms": 263.15,
+      "duration_ms": 119.21,
       "unbound_clean": true,
       "error": null
     },
@@ -1739,7 +1739,7 @@
         "switch"
       ],
       "commands_count": 2,
-      "duration_ms": 101.71,
+      "duration_ms": 45.35,
       "unbound_clean": true,
       "error": null
     },
@@ -1750,7 +1750,7 @@
         "upload"
       ],
       "commands_count": 1,
-      "duration_ms": 41.43,
+      "duration_ms": 11.61,
       "unbound_clean": true,
       "error": null
     },
@@ -1764,7 +1764,7 @@
         "hl"
       ],
       "commands_count": 4,
-      "duration_ms": 145.61,
+      "duration_ms": 38.41,
       "unbound_clean": true,
       "error": null
     },
@@ -1775,7 +1775,7 @@
         "vecho"
       ],
       "commands_count": 1,
-      "duration_ms": 22.8,
+      "duration_ms": 20.84,
       "unbound_clean": true,
       "error": null
     },
@@ -1787,7 +1787,7 @@
         "reload"
       ],
       "commands_count": 2,
-      "duration_ms": 69.7,
+      "duration_ms": 62.12,
       "unbound_clean": true,
       "error": null
     },
@@ -1798,7 +1798,7 @@
         "wall"
       ],
       "commands_count": 1,
-      "duration_ms": 49.83,
+      "duration_ms": 19.02,
       "unbound_clean": true,
       "error": null
     },
@@ -1811,7 +1811,7 @@
         "resetwarns"
       ],
       "commands_count": 3,
-      "duration_ms": 133.22,
+      "duration_ms": 71.14,
       "unbound_clean": true,
       "error": null
     },
@@ -1822,7 +1822,7 @@
         "watch"
       ],
       "commands_count": 1,
-      "duration_ms": 31.74,
+      "duration_ms": 24.58,
       "unbound_clean": true,
       "error": null
     },
@@ -1834,7 +1834,7 @@
         "webupload"
       ],
       "commands_count": 2,
-      "duration_ms": 33.53,
+      "duration_ms": 57.74,
       "unbound_clean": true,
       "error": null
     },
@@ -1848,7 +1848,7 @@
         "cleanwelcome"
       ],
       "commands_count": 4,
-      "duration_ms": 90.94,
+      "duration_ms": 65.39,
       "unbound_clean": true,
       "error": null
     },
@@ -1861,7 +1861,7 @@
         "link"
       ],
       "commands_count": 3,
-      "duration_ms": 63.34,
+      "duration_ms": 80.39,
       "unbound_clean": true,
       "error": null
     },
@@ -1875,7 +1875,7 @@
         "yts"
       ],
       "commands_count": 4,
-      "duration_ms": 85.1,
+      "duration_ms": 45.42,
       "unbound_clean": true,
       "error": null
     }
