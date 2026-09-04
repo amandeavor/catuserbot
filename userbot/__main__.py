@@ -53,7 +53,11 @@ class HealthCheckHandler(BaseHTTPRequestHandler):
 
 def start_health_server():
     try:
-        port = int(os.environ.get("PORT", 8080))
+        raw_port = os.environ.get("PORT", "8080")
+        try:
+            port = int(str(raw_port).strip())
+        except (ValueError, TypeError):
+            port = 8080
         server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
         LOGS.info(f"Aetheris health check daemon active on port {port}")
         server.serve_forever()

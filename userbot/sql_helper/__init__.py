@@ -35,7 +35,7 @@ def get_storage_mode() -> str:
 
 
 def _resolve_storage_mode(raw_uri: Optional[str]) -> tuple[StorageMode, str]:
-    if not raw_uri or raw_uri.strip().lower() in {"none", "null", "sqlite"}:
+    if not raw_uri or raw_uri.strip().lower() in {"none", "null", "sqlite", "value", "your_value", "<value>", "undefined"}:
         return StorageMode.SQLITE, "sqlite:///aetheris.db"
     
     clean_uri = raw_uri.strip()
@@ -45,7 +45,11 @@ def _resolve_storage_mode(raw_uri: Optional[str]) -> tuple[StorageMode, str]:
     if "postgres://" in clean_uri:
         clean_uri = clean_uri.replace("postgres://", "postgresql://", 1)
 
-    return StorageMode.POSTGRESQL, clean_uri
+    if clean_uri.startswith("postgresql://"):
+        return StorageMode.POSTGRESQL, clean_uri
+
+    # Unrecognized or non-database URI fallback to SQLite
+    return StorageMode.SQLITE, "sqlite:///aetheris.db"
 
 
 def start() -> scoped_session:

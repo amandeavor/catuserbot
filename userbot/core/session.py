@@ -19,9 +19,16 @@ __version__ = "3.3.0"
 
 loop = None
 
-if Config.STRING_SESSION:
-    session = StringSession(str(Config.STRING_SESSION))
+raw_session = Config.STRING_SESSION
+if raw_session and len(str(raw_session).strip()) > 50:
+    try:
+        session = StringSession(str(raw_session).strip())
+    except Exception as err:
+        print(f"Warning: Could not parse STRING_SESSION ({err}). Falling back to 'catuserbot'.")
+        session = "catuserbot"
 else:
+    if raw_session:
+        print(f"Warning: STRING_SESSION '{raw_session}' is invalid (too short or placeholder). Falling back to 'catuserbot'.")
     session = "catuserbot"
 
 api_id = Config.APP_ID or 6

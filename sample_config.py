@@ -14,26 +14,45 @@ except ImportError:
         return isinstance(val, str) and (val.startswith("http://") or val.startswith("https://"))
 
 
+def _clean_str(val):
+    if val is None:
+        return None
+    s = str(val).strip()
+    if s.lower() in {"none", "null", "value", "your_value", "<value>", "undefined", '""', "''"}:
+        return None
+    return s
+
+
+def _safe_int(val, default=0):
+    cleaned = _clean_str(val)
+    if not cleaned:
+        return default
+    try:
+        return int(cleaned)
+    except (ValueError, TypeError):
+        return default
+
+
 class Config(object):
     LOGGER = True
-    BOT_NAME = os.environ.get("BOT_NAME", "Aetheris")
+    BOT_NAME = _clean_str(os.environ.get("BOT_NAME")) or "Aetheris"
     # MUST NEEDED VARS
     # set this value with your name
-    ALIVE_NAME = os.environ.get("ALIVE_NAME", None)
+    ALIVE_NAME = _clean_str(os.environ.get("ALIVE_NAME"))
     # Get the values for following 2 from my.telegram.org
-    APP_ID = int(os.environ.get("APP_ID", 6))
-    API_HASH = os.environ.get("API_HASH") or None
+    APP_ID = _safe_int(os.environ.get("APP_ID") or os.environ.get("API_ID"), 6)
+    API_HASH = _clean_str(os.environ.get("API_HASH"))
     # Datbase url heroku sets it automatically else get this from elephantsql
-    DB_URI = os.environ.get("DATABASE_URL", None)
+    DB_URI = _clean_str(os.environ.get("DATABASE_URL")) or _clean_str(os.environ.get("DB_URI"))
     # Get this value by running python3 stringsetup.py or https://repl.it/@sandeep1709/generatestringsession
-    STRING_SESSION = os.environ.get("STRING_SESSION", None)
+    STRING_SESSION = _clean_str(os.environ.get("STRING_SESSION"))
     # Telegram BOT Token and bot username from @BotFather
-    TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN") or os.environ.get(
-        "TG_BOT_TOKEN_BF_HER", None
+    TG_BOT_TOKEN = _clean_str(os.environ.get("TG_BOT_TOKEN")) or _clean_str(
+        os.environ.get("TG_BOT_TOKEN_BF_HER")
     )
     TG_BOT_USERNAME = None
     # get this value from http://www.timezoneconverter.com/cgi-bin/findzone.tzc
-    TZ = os.environ.get("TZ", "Asia/Kolkata")
+    TZ = _clean_str(os.environ.get("TZ")) or "Asia/Kolkata"
     # set this with required cat repo link
     UPSTREAM_REPO = os.environ.get(
         "UPSTREAM_REPO", "https://github.com/TgCatUB/catuserbot"
@@ -55,29 +74,27 @@ class Config(object):
     # BASIC and MAIN CONFIG VARS
     # for profile default name
     # Set this value with group id of private group(can be found this value by .id)
-    PRIVATE_GROUP_BOT_API_ID = int(os.environ.get("PRIVATE_GROUP_BOT_API_ID") or 0)
+    PRIVATE_GROUP_BOT_API_ID = _safe_int(os.environ.get("PRIVATE_GROUP_BOT_API_ID"), 0)
     # Set this value same as PRIVATE_GROUP_BOT_API_ID if you need pmgaurd
-    PRIVATE_GROUP_ID = int(os.environ.get("PRIVATE_GROUP_ID") or 0)
+    PRIVATE_GROUP_ID = _safe_int(os.environ.get("PRIVATE_GROUP_ID"), 0)
     # Set this value for working of fban/unfban/superfban/superunfban cmd
-    FBAN_GROUP_ID = int(os.environ.get("FBAN_GROUP_ID") or 0)
+    FBAN_GROUP_ID = _safe_int(os.environ.get("FBAN_GROUP_ID"), 0)
     # set this value with channel id of private channel use full for .frwd cmd
-    PRIVATE_CHANNEL_BOT_API_ID = int(os.environ.get("PRIVATE_CHANNEL_BOT_API_ID") or 0)
+    PRIVATE_CHANNEL_BOT_API_ID = _safe_int(os.environ.get("PRIVATE_CHANNEL_BOT_API_ID"), 0)
     # for heroku plugin you can get this value from https://dashboard.heroku.com/account
-    HEROKU_API_KEY = os.environ.get("HEROKU_API_KEY", None)
+    HEROKU_API_KEY = _clean_str(os.environ.get("HEROKU_API_KEY"))
     # set this with same app name you given for heroku
-    HEROKU_APP_NAME = os.environ.get("HEROKU_APP_NAME", None)
+    HEROKU_APP_NAME = _clean_str(os.environ.get("HEROKU_APP_NAME"))
     # Owner id to show profile link of given id as owner
-    OWNER_ID = int(os.environ.get("OWNER_ID") or 0)
+    OWNER_ID = _safe_int(os.environ.get("OWNER_ID"), 0)
     # set this with group id so it keeps notifying about your tagged messages or pms
-    PM_LOGGER_GROUP_ID = int(
-        os.environ.get("PM_LOGGER_GROUP_ID")
-        or os.environ.get("PM_LOGGR_BOT_API_ID")
-        or 0
+    PM_LOGGER_GROUP_ID = _safe_int(
+        os.environ.get("PM_LOGGER_GROUP_ID") or os.environ.get("PM_LOGGR_BOT_API_ID"), 0
     )
 
     # Custom vars for userbot
     # set this will channel id of your custom plugins
-    PLUGIN_CHANNEL = int(os.environ.get("PLUGIN_CHANNEL") or 0)
+    PLUGIN_CHANNEL = _safe_int(os.environ.get("PLUGIN_CHANNEL"), 0)
     # set this value with your required name for telegraph plugin
     TELEGRAPH_SHORT_NAME = os.environ.get("TELEGRAPH_SHORT_NAME", "catuserbot")
     # for custom thumb image set this with your required thumb telegraoh link

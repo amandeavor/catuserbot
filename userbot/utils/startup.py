@@ -59,15 +59,24 @@ async def setup_bot():
                 catub.session.save()
                 break
         bot_details = await catub.tgbot.get_me()
-        Config.TG_BOT_USERNAME = f"@{bot_details.username}"
-        # await catub.start(bot_token=Config.TG_BOT_USERNAME)
+        if bot_details:
+            Config.TG_BOT_USERNAME = f"@{bot_details.username}"
         catub.me = await catub.get_me()
+        if not catub.me:
+            LOGS.critical(
+                "CRITICAL: Failed to authenticate user account! STRING_SESSION is missing, invalid, or expired. "
+                "Please run 'python stringsetup.py' to generate your session string and set STRING_SESSION."
+            )
+            sys.exit(1)
         catub.uid = catub.tgbot.uid = utils.get_peer_id(catub.me)
         if Config.OWNER_ID == 0:
             Config.OWNER_ID = utils.get_peer_id(catub.me)
     except Exception as e:
-        LOGS.error(f"STRING_SESSION - {e}")
-        sys.exit()
+        LOGS.critical(
+            f"Telegram Authentication Failure: {e}. "
+            "Please check that APP_ID, API_HASH, and STRING_SESSION are valid credentials, not placeholder values!"
+        )
+        sys.exit(1)
 
 
 async def startupmessage():
