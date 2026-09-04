@@ -113,3 +113,8 @@ config.py
 *.db-journal
 userbot/cache/*
 !userbot/cache/.gitkeep
+
+# Temporary test snapshots & local artifacts
+artifacts/db_snapshot_*.json
+artifacts/test_fixture*
+downloads/

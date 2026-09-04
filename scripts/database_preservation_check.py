@@ -1,25 +1,33 @@
 #!/usr/bin/env python3
 """
-Aetheris V5 Database State Preservation & Migration Integrity Check.
-Verifies datastore continuity across restarts, reloads, and migrations:
-1. Connects to configured datastore backend (SQLite / PostgreSQL)
-2. Captures tables, row counts, and schema signatures
-3. Verifies non-sensitive persistent state (e.g. gvars)
-4. Asserts no tables dropped, no data lost, zero secret leaks
-5. Produces sanitized artifact: artifacts/database_preservation.json
+Aetheris V5 Database State Preservation & Migration Integrity Harness.
+Supports explicit lifecycle comparison:
+  --snapshot-before : Captures pre-live datastore state
+  --snapshot-after  : Captures post-live datastore state
+  --compare         : Verifies continuity, detects database switching, checks zero data loss
+
+Verifies:
+1. Database Identity Continuity (Strictly detects and aborts on silent PostgreSQL/SQLite switching)
+2. Schema Signatures (Column names, types, primary keys, indexes)
+3. Table Continuity & Monotonic Row Counts
+4. Persistent Global Variables (gvars) with strict secret value suppression
+5. Binds results to current Git commit HEAD via artifact_utils
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import os
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional, Tuple
 
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(ROOT_DIR))
+
+from scripts.artifact_utils import get_standard_metadata
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,174 +43,306 @@ def is_sensitive_key(key_name: str) -> bool:
     return any(k in lower for k in SENSITIVE_KEYWORDS)
 
 
+def get_database_identity(engine) -> Dict[str, Any]:
+    """Capture sanitized database identity to prevent silent database switching."""
+    from userbot.Config import Config
+    from userbot.sql_helper import get_storage_mode
+
+    url = engine.url
+    backend = engine.name
+    storage_mode = get_storage_mode()
+
+    if backend == "sqlite":
+        # SQLite database file path resolution
+        db_path = url.database
+        if db_path and db_path != ":memory:":
+            abs_path = str(Path(db_path).resolve())
+            file_exists = os.path.isfile(abs_path)
+            file_size = os.path.getsize(abs_path) if file_exists else 0
+        else:
+            abs_path = ":memory:"
+            file_exists = True
+            file_size = 0
+        identifier = f"sqlite://{abs_path}"
+    else:
+        # PostgreSQL host/port/database (sanitized, password stripped)
+        host = url.host or "localhost"
+        port = url.port or 5432
+        dbname = url.database or "aetheris"
+        abs_path = f"{host}:{port}/{dbname}"
+        file_exists = True
+        file_size = -1
+        identifier = f"postgresql://{abs_path}"
+
+    return {
+        "storage_mode": storage_mode,
+        "backend": backend,
+        "identifier": identifier,
+        "location": abs_path,
+        "file_exists": file_exists,
+    }
+
+
 def capture_snapshot() -> Dict[str, Any]:
+    """Capture comprehensive schema and state signature of the current authoritative database."""
     from sqlalchemy import inspect, text
-    from userbot.sql_helper import ENGINE, get_storage_mode
+    from userbot.sql_helper import ENGINE
 
     if ENGINE is None:
-        raise RuntimeError("SQLAlchemy ENGINE is not initialized")
+        raise RuntimeError("Authoritative database ENGINE is not initialized")
 
     inspector = inspect(ENGINE)
-    table_names = inspector.get_table_names()
-    storage_mode = get_storage_mode()
-    dialect = ENGINE.name
+    table_names = sorted(inspector.get_table_names())
+    db_id = get_database_identity(ENGINE)
 
     table_data = {}
+    schema_signatures = {}
+
     with ENGINE.connect() as conn:
         for tbl in table_names:
             try:
+                # Row count
                 res = conn.execute(text(f'SELECT COUNT(*) FROM "{tbl}"'))
                 row_count = res.scalar() or 0
-                cols = [c["name"] for c in inspector.get_columns(tbl)]
+
+                # Schema columns
+                columns = inspector.get_columns(tbl)
+                col_info = [
+                    {
+                        "name": c["name"],
+                        "type": str(c["type"]),
+                        "nullable": c.get("nullable", True),
+                        "primary_key": c.get("primary_key", False),
+                    }
+                    for c in columns
+                ]
+
+                # Schema indexes
+                indexes = inspector.get_indexes(tbl)
+                idx_info = [
+                    {"name": idx["name"], "columns": idx["column_names"], "unique": idx.get("unique", False)}
+                    for idx in indexes
+                ]
+
+                # Compute stable signature of table schema
+                sig_str = json.dumps({"cols": col_info, "idxs": idx_info}, sort_keys=True)
+                tbl_sig = hashlib.sha256(sig_str.encode()).hexdigest()[:16]
+
                 table_data[tbl] = {
                     "row_count": row_count,
-                    "columns_count": len(cols),
+                    "columns_count": len(columns),
+                    "indexes_count": len(indexes),
+                    "schema_signature": tbl_sig,
+                    "columns": col_info,
                 }
+                schema_signatures[tbl] = tbl_sig
+
             except Exception as e:
-                LOGS.warning("Could not inspect table '%s': %s", tbl, e)
+                LOGS.warning("Inspection error on table '%s': %s", tbl, e)
                 table_data[tbl] = {
                     "row_count": -1,
                     "columns_count": 0,
                     "error": str(e),
                 }
 
-    # Inspect gvars safely without leaking sensitive values
-    gvars_keys = []
+    # Safe Global Variables inspection (Zero plaintext secrets)
+    safe_gvars = []
     if "gvars" in table_names:
         try:
             with ENGINE.connect() as conn:
-                res = conn.execute(text('SELECT "variable" FROM "gvars"'))
+                res = conn.execute(text('SELECT "variable" FROM "gvars" ORDER BY "variable"'))
                 for row in res:
-                    var_name = row[0]
+                    var_name = str(row[0])
                     if not is_sensitive_key(var_name):
-                        gvars_keys.append(var_name)
+                        safe_gvars.append(var_name)
                     else:
-                        gvars_keys.append(f"[MASKED_SENSITIVE_KEY_{len(var_name)}]")
+                        safe_gvars.append(f"[MASKED_KEY:{len(var_name)}]")
         except Exception as e:
             LOGS.warning("Could not inspect gvars: %s", e)
 
-    return {
-        "timestamp": time.time(),
-        "storage_mode": storage_mode,
-        "dialect": dialect,
+    metadata = get_standard_metadata("database_preservation_snapshot", "CAPTURED")
+    metadata.update({
+        "database_identity": db_id,
         "total_tables": len(table_names),
+        "table_names": table_names,
         "table_stats": table_data,
-        "safe_gvars_count": len(gvars_keys),
-        "safe_gvars_sample": gvars_keys[:20],
-    }
+        "safe_gvars_count": len(safe_gvars),
+        "safe_gvars": safe_gvars,
+    })
+    return metadata
 
 
-def verify_preservation(pre_snap: Dict[str, Any], post_snap: Dict[str, Any]) -> Dict[str, Any]:
+def compare_snapshots(before: Dict[str, Any], after: Dict[str, Any]) -> Tuple[bool, List[str], Dict[str, Any]]:
+    """Strict comparison of before and after snapshots. Fails on any silent loss or DB switching."""
     issues = []
 
-    # Verify tables preserved
-    pre_tables = set(pre_snap.get("table_stats", {}).keys())
-    post_tables = set(post_snap.get("table_stats", {}).keys())
+    # 1. Check database identity continuity (Anti-Split-Brain / Anti-Silent-Switching)
+    before_id = before.get("database_identity", {})
+    after_id = after.get("database_identity", {})
 
-    missing_tables = pre_tables - post_tables
+    if before_id.get("backend") != after_id.get("backend"):
+        issues.append(
+            f"DATABASE_SWITCH_DETECTED: Backend dialect changed from {before_id.get('backend')} to {after_id.get('backend')}!"
+        )
+
+    if before_id.get("identifier") != after_id.get("identifier"):
+        issues.append(
+            f"DATABASE_SWITCH_DETECTED: Target database changed from {before_id.get('identifier')} to {after_id.get('identifier')}!"
+        )
+
+    # 2. Check table preservation
+    before_tables = set(before.get("table_stats", {}).keys())
+    after_tables = set(after.get("table_stats", {}).keys())
+
+    missing_tables = before_tables - after_tables
     if missing_tables:
-        issues.append(f"Tables dropped after boot: {sorted(missing_tables)}")
+        issues.append(f"TABLES_DROPPED: Existing tables dropped after live run: {sorted(missing_tables)}")
 
-    # Verify row counts not decreased
-    for tbl, pre_info in pre_snap.get("table_stats", {}).items():
-        if tbl in post_tables:
-            post_info = post_snap["table_stats"][tbl]
-            pre_rows = pre_info.get("row_count", 0)
-            post_rows = post_info.get("row_count", 0)
-            if post_rows < pre_rows:
-                issues.append(f"Table '{tbl}' suffered row count drop: {pre_rows} -> {post_rows}")
+    # 3. Check row counts (must not decrease unexpectedly)
+    for tbl in before_tables.intersection(after_tables):
+        pre_info = before["table_stats"][tbl]
+        post_info = after["table_stats"][tbl]
+
+        pre_rows = pre_info.get("row_count", 0)
+        post_rows = post_info.get("row_count", 0)
+
+        if post_rows < pre_rows:
+            issues.append(f"DATA_LOSS: Table '{tbl}' row count dropped from {pre_rows} to {post_rows}!")
+
+        # 4. Check schema signatures
+        pre_sig = pre_info.get("schema_signature")
+        post_sig = post_info.get("schema_signature")
+        if pre_sig and post_sig and pre_sig != post_sig:
+            issues.append(f"SCHEMA_CORRUPTION: Table '{tbl}' schema structure modified unexpectedly!")
+
+    # 5. Check persistent safe gvars
+    pre_gvars = set(before.get("safe_gvars", []))
+    post_gvars = set(after.get("safe_gvars", []))
+    missing_gvars = pre_gvars - post_gvars
+    if missing_gvars:
+        issues.append(f"GVARS_DROPPED: Persistent global variables lost: {sorted(missing_gvars)}")
 
     passed = (len(issues) == 0)
-    return {
-        "preserved": passed,
-        "tables_before": len(pre_tables),
-        "tables_after": len(post_tables),
+    details = {
+        "database_identity_verified": (before_id.get("identifier") == after_id.get("identifier")),
+        "tables_before": len(before_tables),
+        "tables_after": len(after_tables),
+        "shared_tables_checked": len(before_tables.intersection(after_tables)),
+        "gvars_preserved": len(missing_gvars) == 0,
         "issues": issues,
     }
+    return passed, issues, details
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Aetheris V5 Database State Preservation Check")
-    parser.add_argument("--snapshot", choices=["pre", "post", "verify"], default="verify",
-                        help="Action: capture pre-boot snapshot, post-boot snapshot, or full verification")
+    parser = argparse.ArgumentParser(description="Aetheris V5 Database State Preservation Harness")
+    parser.add_argument("--snapshot-before", action="store_true", help="Capture pre-live database state snapshot")
+    parser.add_argument("--snapshot-after", action="store_true", help="Capture post-live database state snapshot")
+    parser.add_argument("--compare", action="store_true", help="Compare before/after snapshots and generate evidence")
+    parser.add_argument("--verify", action="store_true", help="Convenience: run snapshot or verify self-consistency")
     args = parser.parse_args()
 
     artifacts_dir = ROOT_DIR / "artifacts"
     artifacts_dir.mkdir(parents=True, exist_ok=True)
-    pre_file = artifacts_dir / "db_pre_snapshot.json"
-    post_file = artifacts_dir / "db_post_snapshot.json"
+    before_file = artifacts_dir / "db_snapshot_before.json"
+    after_file = artifacts_dir / "db_snapshot_after.json"
     report_file = artifacts_dir / "database_preservation.json"
 
-    LOGS.info("Executing database preservation check (mode: %s)...", args.snapshot)
+    if args.snapshot_before:
+        LOGS.info("Capturing PRE-LIVE database state snapshot...")
+        snap = capture_snapshot()
+        with open(before_file, "w", encoding="utf-8") as f:
+            json.dump(snap, f, indent=2)
+        LOGS.info("Pre-live snapshot written to %s (%d tables verified)", before_file, snap["total_tables"])
+        sys.exit(0)
 
-    try:
-        current_snap = capture_snapshot()
-    except Exception as e:
-        LOGS.error("Failed to capture database snapshot: %s", e)
-        report = {
-            "timestamp": time.time(),
-            "status": "FAILED",
-            "gate_passed": False,
-            "error": str(e),
-        }
+    elif args.snapshot_after:
+        LOGS.info("Capturing POST-LIVE database state snapshot...")
+        snap = capture_snapshot()
+        with open(after_file, "w", encoding="utf-8") as f:
+            json.dump(snap, f, indent=2)
+        LOGS.info("Post-live snapshot written to %s (%d tables verified)", after_file, snap["total_tables"])
+        sys.exit(0)
+
+    elif args.compare:
+        LOGS.info("Comparing PRE and POST database snapshots...")
+        if not before_file.exists():
+            err = f"Missing pre-live snapshot file: {before_file}. Run --snapshot-before first."
+            LOGS.error(err)
+            sys.exit(1)
+        if not after_file.exists():
+            err = f"Missing post-live snapshot file: {after_file}. Run --snapshot-after first."
+            LOGS.error(err)
+            sys.exit(1)
+
+        with open(before_file, "r", encoding="utf-8") as f:
+            pre_snap = json.load(f)
+        with open(after_file, "r", encoding="utf-8") as f:
+            post_snap = json.load(f)
+
+        passed, issues, details = compare_snapshots(pre_snap, post_snap)
+        status_res = "PASS" if passed else "FAILED"
+
+        report = get_standard_metadata("database_preservation_verification", status_res)
+        report.update({
+            "status": status_res,
+            "gate_passed": passed,
+            "backend": post_snap.get("database_identity", {}).get("backend"),
+            "storage_mode": post_snap.get("database_identity", {}).get("storage_mode"),
+            "database_identifier": post_snap.get("database_identity", {}).get("identifier"),
+            "total_tables": post_snap.get("total_tables"),
+            "verification_details": details,
+            "error": None if passed else "; ".join(issues),
+        })
+
         with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
-        sys.exit(1)
 
-    if args.snapshot == "pre":
-        with open(pre_file, "w", encoding="utf-8") as f:
-            json.dump(current_snap, f, indent=2)
-        LOGS.info("Pre-boot snapshot saved to %s (%d tables)", pre_file, current_snap["total_tables"])
-        sys.exit(0)
-
-    elif args.snapshot == "post":
-        with open(post_file, "w", encoding="utf-8") as f:
-            json.dump(current_snap, f, indent=2)
-        LOGS.info("Post-boot snapshot saved to %s (%d tables)", post_file, current_snap["total_tables"])
-        # If pre snapshot exists, run verification automatically
-        if pre_file.exists():
-            with open(pre_file, "r", encoding="utf-8") as f:
-                pre_snap = json.load(f)
-            res = verify_preservation(pre_snap, current_snap)
-            report = {
-                "timestamp": time.time(),
-                "status": "PASS" if res["preserved"] else "FAILED",
-                "gate_passed": res["preserved"],
-                "backend": current_snap["dialect"],
-                "storage_mode": current_snap["storage_mode"],
-                "total_tables": current_snap["total_tables"],
-                "verification_details": res,
-                "error": None if res["preserved"] else "; ".join(res["issues"]),
-            }
-            with open(report_file, "w", encoding="utf-8") as f:
-                json.dump(report, f, indent=2)
-            LOGS.info("Preservation report written to %s (Status: %s)", report_file, report["status"])
-        sys.exit(0)
+        if passed:
+            LOGS.info("[PASS] Database preservation verified. Report: %s", report_file)
+            sys.exit(0)
+        else:
+            LOGS.error("[FAIL] Database preservation failed: %s", issues)
+            sys.exit(1)
 
     else:
-        # Full verify mode: If pre snapshot doesn't exist, use current as baseline and verify self-consistency
-        pre_snap = current_snap
-        if pre_file.exists():
-            with open(pre_file, "r", encoding="utf-8") as f:
-                pre_snap = json.load(f)
+        # Default self-consistency mode
+        LOGS.info("Executing database preservation verification...")
+        current_snap = capture_snapshot()
 
-        res = verify_preservation(pre_snap, current_snap)
-        report = {
-            "timestamp": time.time(),
-            "status": "PASS" if res["preserved"] else "FAILED",
-            "gate_passed": res["preserved"],
-            "backend": current_snap["dialect"],
-            "storage_mode": current_snap["storage_mode"],
-            "total_tables": current_snap["total_tables"],
-            "table_stats": current_snap["table_stats"],
-            "safe_gvars_count": current_snap["safe_gvars_count"],
-            "verification_details": res,
-            "error": None if res["preserved"] else "; ".join(res["issues"]),
-        }
+        # If a pre-snapshot exists, compare against it; otherwise use current as baseline
+        if before_file.exists():
+            with open(before_file, "r", encoding="utf-8") as f:
+                pre_snap = json.load(f)
+        else:
+            pre_snap = current_snap
+            with open(before_file, "w", encoding="utf-8") as f:
+                json.dump(pre_snap, f, indent=2)
+
+        passed, issues, details = compare_snapshots(pre_snap, current_snap)
+        status_res = "PASS" if passed else "FAILED"
+
+        report = get_standard_metadata("database_preservation_verification", status_res)
+        report.update({
+            "status": status_res,
+            "gate_passed": passed,
+            "backend": current_snap.get("database_identity", {}).get("backend"),
+            "storage_mode": current_snap.get("database_identity", {}).get("storage_mode"),
+            "database_identifier": current_snap.get("database_identity", {}).get("identifier"),
+            "total_tables": current_snap.get("total_tables"),
+            "verification_details": details,
+            "error": None if passed else "; ".join(issues),
+        })
+
         with open(report_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
-        LOGS.info("Preservation check complete: %d tables verified. Report: %s", current_snap["total_tables"], report_file)
-        sys.exit(0 if res["preserved"] else 1)
+
+        if passed:
+            LOGS.info("[PASS] Database preservation check passed (%d tables verified)", current_snap["total_tables"])
+            sys.exit(0)
+        else:
+            LOGS.error("[FAIL] Database preservation check failed: %s", issues)
+            sys.exit(1)
 
 
 if __name__ == "__main__":

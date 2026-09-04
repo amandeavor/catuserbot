@@ -1,0 +1,17 @@
+{
+  "git_commit": "c448804f766e1cd76276f550f5bccdad08b9ad39",
+  "version": "5.0.0-rc2",
+  "qualification_level": "LEVEL_1_AUTOMATED_QUALIFIED",
+  "automated_tests": "PASS",
+  "plugin_runtime": "PASS",
+  "command_registry": "PASS",
+  "secret_scan": "PASS",
+  "database_preservation": "PASS",
+  "session_preservation": "PENDING",
+  "basic_mtproto": "PENDING",
+  "live_transfer": "PENDING",
+  "live_hotreload": "PENDING",
+  "operator_validation": "PENDING",
+  "stable_promotion_eligible": false,
+  "note": "Aetheris remains 5.0.0-rc2. Stable promotion is blocked until the human operator personally verifies real-world Telegram usage."
+}

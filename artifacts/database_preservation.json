@@ -1,101 +1,24 @@
 {
-  "timestamp": 1788515311.0434105,
+  "git_commit": "c448804f766e1cd76276f550f5bccdad08b9ad39",
+  "git_branch": "aetheris-v5",
+  "aetheris_version": "5.0.0-rc2",
+  "test_name": "database_preservation_verification",
+  "timestamp_utc": "2026-09-04T10:04:11.229536+00:00",
+  "platform": "Windows-11-10.0.28000-SP0",
+  "python_version": "3.13.14",
+  "result": "PASS",
   "status": "PASS",
   "gate_passed": true,
   "backend": "sqlite",
   "storage_mode": "SQLITE",
+  "database_identifier": "sqlite://C:\\Users\\Admin\\catuserbot\\aetheris.db",
   "total_tables": 21,
-  "table_stats": {
-    "antiflood": {
-      "row_count": 0,
-      "columns_count": 4
-    },
-    "blacklist": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "cat_globalcollection": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "cat_globalcollectionjson": {
-      "row_count": 0,
-      "columns_count": 3
-    },
-    "catbroadcast": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "catfilters": {
-      "row_count": 0,
-      "columns_count": 4
-    },
-    "catglobal_list": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "catscheduler": {
-      "row_count": 0,
-      "columns_count": 5
-    },
-    "catsnip": {
-      "row_count": 0,
-      "columns_count": 3
-    },
-    "catwelcome": {
-      "row_count": 0,
-      "columns_count": 4
-    },
-    "chatbot": {
-      "row_count": 0,
-      "columns_count": 6
-    },
-    "gban": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "gdrive": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "globals": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "joinwelcome": {
-      "row_count": 0,
-      "columns_count": 4
-    },
-    "locks": {
-      "row_count": 0,
-      "columns_count": 6
-    },
-    "mute": {
-      "row_count": 0,
-      "columns_count": 2
-    },
-    "no_log_pms": {
-      "row_count": 0,
-      "columns_count": 1
-    },
-    "pmpermit_sql": {
-      "row_count": 0,
-      "columns_count": 5
-    },
-    "warn_settings": {
-      "row_count": 0,
-      "columns_count": 3
-    },
-    "warns": {
-      "row_count": 0,
-      "columns_count": 4
-    }
-  },
-  "safe_gvars_count": 0,
   "verification_details": {
-    "preserved": true,
+    "database_identity_verified": true,
     "tables_before": 21,
     "tables_after": 21,
+    "shared_tables_checked": 21,
+    "gvars_preserved": true,
     "issues": []
   },
   "error": null
