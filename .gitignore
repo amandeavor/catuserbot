@@ -117,4 +117,8 @@ userbot/cache/*
 # Temporary test snapshots & local artifacts
 artifacts/db_snapshot_*.json
 artifacts/test_fixture*
+artifacts/final_acceptance_manifest.json
+artifacts/session_preservation.json
+artifacts/live_*.json
+artifacts/database_preservation.json
 downloads/
