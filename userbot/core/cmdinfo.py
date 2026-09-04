@@ -9,13 +9,22 @@
 
 from typing import Dict, List, Union
 
-from urlextract import URLExtract
+try:
+    from urlextract import URLExtract
+    extractor = URLExtract()
+except ImportError:
+    import re
+
+    class FallbackURLExtract:
+        def find_urls(self, text):
+            return re.findall(r'https?://[^\s<>"]+|www\.[^\s<>"]+', text)
+
+    extractor = FallbackURLExtract()
 
 from ..Config import Config
 from . import CMD_INFO, GRP_INFO, PLG_INFO
 from .managers import edit_delete
 
-extractor = URLExtract()
 cmdprefix = Config.COMMAND_HAND_LER
 
 hemojis = {

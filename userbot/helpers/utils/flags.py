@@ -7,9 +7,12 @@ import shlex
 from typing import Any, Dict, List, Tuple
 
 
+from userbot.core.parser import command_parser
+
+
 def parse_arguments(text: str) -> Tuple[Dict[str, Any], List[str], str]:
     """
-    Parses CLI-style flags and positional arguments from message text.
+    Parses CLI-style flags and positional arguments from message text using Aetheris V5 parser.
     Supports:
         --flag value
         --flag=value
@@ -20,6 +23,12 @@ def parse_arguments(text: str) -> Tuple[Dict[str, Any], List[str], str]:
     """
     if not text:
         return {}, [], ""
+
+    try:
+        parsed = command_parser.parse(f".dummy {text}")
+        return parsed.flags, parsed.positional, parsed.raw_args
+    except Exception:
+        pass
 
     flags: Dict[str, Any] = {}
     positional: List[str] = []

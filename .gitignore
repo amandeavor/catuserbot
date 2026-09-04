@@ -105,3 +105,11 @@ config.py
 # mypy
 .mypy_cache/
 *.bak
+
+# Telegram sessions & databases
+*.session
+*.session-journal
+*.db
+*.db-journal
+userbot/cache/*
+!userbot/cache/.gitkeep

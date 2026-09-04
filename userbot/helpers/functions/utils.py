@@ -11,7 +11,19 @@ import re
 import time
 from datetime import datetime
 
-from emoji import get_emoji_regexp
+try:
+    from emoji import get_emoji_regexp
+except (ImportError, AttributeError):
+    def get_emoji_regexp():
+        try:
+            import emoji
+            if hasattr(emoji, "EMOJI_DATA"):
+                emojis = map(re.escape, emoji.EMOJI_DATA.keys())
+                return re.compile("|".join(sorted(emojis, key=len, reverse=True)))
+        except Exception:
+            pass
+        return re.compile(r"[\U00010000-\U0010ffff]", flags=re.UNICODE)
+
 from telethon.tl.types import Channel, PollAnswer
 
 

@@ -12,11 +12,24 @@ import re
 import urllib.request
 from collections import defaultdict
 
-import ujson
-import yt_dlp
+try:
+    import ujson
+except ImportError:
+    import json as ujson
+
+try:
+    import yt_dlp
+    from yt_dlp.utils import DownloadError, ExtractorError, GeoRestrictedError
+except ImportError:
+    yt_dlp = None
+    DownloadError = ExtractorError = GeoRestrictedError = Exception
+
 from telethon import Button
-from youtubesearchpython import VideosSearch
-from yt_dlp.utils import DownloadError, ExtractorError, GeoRestrictedError
+
+try:
+    from youtubesearchpython import VideosSearch
+except ImportError:
+    VideosSearch = None
 
 from ...Config import Config
 from ...core import pool

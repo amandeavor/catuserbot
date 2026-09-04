@@ -11,7 +11,11 @@ import contextlib
 import os
 from pathlib import Path
 
-import lyricsgenius
+try:
+    import lyricsgenius
+except ImportError:
+    lyricsgenius = None
+
 import requests
 from bs4 import BeautifulSoup
 

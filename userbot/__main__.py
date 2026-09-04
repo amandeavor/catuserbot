@@ -12,6 +12,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import userbot
 from userbot import BOTLOG_CHATID, PM_LOGGER_GROUP_ID
 
+from telethon import events
+
+from userbot.core.callbacks import secure_callbacks
+from userbot.core.jobs.supervisor import job_supervisor
+from userbot.core.web import dashboard
+
 from .Config import Config
 from .core.logger import logging
 from .core.session import catub
@@ -69,12 +75,25 @@ except Exception as e:
 
 
 async def startup_process():
+    await job_supervisor.start()
+    try:
+        if hasattr(catub, "tgbot") and catub.tgbot:
+            catub.tgbot.add_event_handler(secure_callbacks.handle_callback_query, events.CallbackQuery)
+        catub.add_event_handler(secure_callbacks.handle_callback_query, events.CallbackQuery)
+    except Exception as cb_err:
+        LOGS.warning(f"Could not bind callback query handler: {cb_err}")
+
+    try:
+        await dashboard.start()
+    except Exception as dash_err:
+        LOGS.warning(f"Dashboard startup skipped: {dash_err}")
+
     await verifyLoggerGroup()
     await load_plugins("plugins")
     await load_plugins("assistant")
     LOGS.info("============================================================================")
-    LOGS.info("||             ◈ A E T H E R I S  U S E R B O T  v4.0 ◈                   ||")
-    LOGS.info("||                     Engine is Online & Operational                     ||")
+    LOGS.info("||             ◈ A E T H E R I S  U S E R B O T  v5.0 ◈                   ||")
+    LOGS.info("||               MTProto Automation Core Online & Operational             ||")
     LOGS.info(f"||         Type {cmdhr}alive or {cmdhr}ping to verify your live instance        ||")
     LOGS.info("============================================================================")
     await verifyLoggerGroup()

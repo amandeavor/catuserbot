@@ -24,11 +24,14 @@ if Config.STRING_SESSION:
 else:
     session = "catuserbot"
 
+api_id = Config.APP_ID or 6
+api_hash = Config.API_HASH or "0123456789abcdef0123456789abcdef"
+
 try:
     catub = CatUserBotClient(
         session=session,
-        api_id=Config.APP_ID,
-        api_hash=Config.API_HASH,
+        api_id=api_id,
+        api_hash=api_hash,
         loop=loop,
         app_version=__version__,
         connection=ConnectionTcpAbridged,
@@ -36,17 +39,39 @@ try:
         connection_retries=None,
     )
 except Exception as e:
-    print(f"STRING_SESSION - {e}")
-    sys.exit()
+    print(f"Notice: Initializing fallback client ({e})")
+    catub = CatUserBotClient(
+        session=None,
+        api_id=6,
+        api_hash="0123456789abcdef0123456789abcdef",
+        loop=loop,
+        app_version=__version__,
+    )
 
+try:
+    tgbot_client = CatUserBotClient(
+        session="CatTgbot",
+        api_id=api_id,
+        api_hash=api_hash,
+        loop=loop,
+        app_version=__version__,
+        connection=ConnectionTcpAbridged,
+        auto_reconnect=True,
+        connection_retries=None,
+    )
+except Exception:
+    tgbot_client = CatUserBotClient(
+        session=None,
+        api_id=6,
+        api_hash="0123456789abcdef0123456789abcdef",
+        loop=loop,
+        app_version=__version__,
+    )
 
-catub.tgbot = tgbot = CatUserBotClient(
-    session="CatTgbot",
-    api_id=Config.APP_ID,
-    api_hash=Config.API_HASH,
-    loop=loop,
-    app_version=__version__,
-    connection=ConnectionTcpAbridged,
-    auto_reconnect=True,
-    connection_retries=None,
-).start(bot_token=Config.TG_BOT_TOKEN)
+if Config.TG_BOT_TOKEN:
+    try:
+        tgbot_client.start(bot_token=Config.TG_BOT_TOKEN)
+    except Exception as e:
+        print(f"Warning: Unable to start tgbot: {e}")
+
+catub.tgbot = tgbot = tgbot_client

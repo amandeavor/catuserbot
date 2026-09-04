@@ -6,7 +6,12 @@ import os
 from typing import Set
 
 from telethon.tl.types import ChatBannedRights
-from validators.url import url
+
+try:
+    from validators.url import url
+except ImportError:
+    def url(val):
+        return isinstance(val, str) and (val.startswith("http://") or val.startswith("https://"))
 
 
 class Config(object):

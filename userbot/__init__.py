@@ -7,17 +7,28 @@ import signal
 import sys
 import time
 
-import heroku3
+try:
+    import heroku3
+except ImportError:
+    heroku3 = None
 
 from .Config import Config
 from .core.logger import logging
 from .core.session import catub
-from .helpers.functions.converter import Convert
-from .helpers.functions.musictool import *
+try:
+    from .helpers.functions.converter import Convert
+except Exception:
+    Convert = None
+
+try:
+    from .helpers.functions.musictool import *
+except Exception:
+    pass
+
 from .helpers.utils.utils import runasync
 from .sql_helper.globals import addgvar, delgvar, gvarstatus
 
-__version__ = "4.0.0"
+__version__ = "5.0.0"
 __license__ = "GNU Affero General Public License v3.0"
 __author__ = "Aetheris <https://github.com/amandeavor/catuserbot>"
 __copyright__ = f"Copyright (C) 2026  {__author__}"
@@ -29,8 +40,8 @@ bot = catub
 aetheris = catub
 
 StartTime = time.time()
-catversion = "4.0.0"
-aetherisversion = "4.0.0"
+catversion = "5.0.0"
+aetherisversion = "5.0.0"
 
 
 def close_connection(*_):

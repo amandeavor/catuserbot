@@ -16,9 +16,21 @@ from textwrap import wrap
 from uuid import uuid4
 
 import requests
-from googletrans import Translator
-from html_telegraph_poster import TelegraphPoster
-from imdb import Cinemagoer
+
+try:
+    from googletrans import Translator
+except ImportError:
+    Translator = None
+
+try:
+    from html_telegraph_poster import TelegraphPoster
+except ImportError:
+    TelegraphPoster = None
+
+try:
+    from imdb import Cinemagoer
+except ImportError:
+    Cinemagoer = None
 from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont, ImageOps
 from telethon import functions, types
 from telethon.errors.rpcerrorlist import YouBlockedUserError
@@ -30,7 +42,7 @@ from ...sql_helper.globals import gvarstatus
 from ..resources.states import states
 
 LOGS = logging.getLogger(__name__)
-imdb = Cinemagoer()
+imdb = Cinemagoer() if Cinemagoer is not None else None
 
 mov_titles = [
     "long imdb title",

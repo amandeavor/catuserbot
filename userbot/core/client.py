@@ -9,12 +9,20 @@
 
 import asyncio
 import datetime
+import time
 import inspect
 import re
 import sys
 import traceback
 from pathlib import Path
 from typing import Dict, List, Union
+
+from userbot.core.ai import ai_router
+from userbot.core.flood_shield import flood_shield
+from userbot.core.jobs.supervisor import job_supervisor
+from userbot.core.media.service import media_service
+from userbot.core.observability import metrics, tracer
+from userbot.core.transfer.engine import transfer_engine
 
 from telethon import TelegramClient, events
 from telethon.errors import (
@@ -140,44 +148,68 @@ class CatUserBotClient(TelegramClient):
                     return await edit_delete(
                         check, "`I don't think this is a personal Chat.`"
                     )
+                t_start = time.perf_counter()
+                cmd_tag = command[0] if command else getattr(func, "__name__", "unknown")
+                span = tracer.start_span(f"cmd:{cmd_tag}", attributes={"chat_id": getattr(check, "chat_id", None)})
                 try:
                     await func(check)
+                    lat_ms = (time.perf_counter() - t_start) * 1000.0
+                    metrics.record_command(cmd_tag, lat_ms, success=True)
+                    tracer.finish_span(span, status="OK")
                 except events.StopPropagation as e:
+                    lat_ms = (time.perf_counter() - t_start) * 1000.0
+                    metrics.record_command(cmd_tag, lat_ms, success=True)
+                    tracer.finish_span(span, status="OK")
                     raise events.StopPropagation from e
                 except KeyboardInterrupt:
+                    tracer.finish_span(span, status="CANCELLED")
                     pass
                 except MessageNotModifiedError:
                     LOGS.error("Message was same as previous message")
+                    tracer.finish_span(span, status="WARN", error="MessageNotModified")
                 except MessageIdInvalidError:
                     LOGS.error("Message was deleted or cant be found")
+                    tracer.finish_span(span, status="WARN", error="MessageIdInvalid")
                 except BotInlineDisabledError:
+                    tracer.finish_span(span, status="WARN", error="BotInlineDisabled")
                     await edit_delete(check, "`Turn on Inline mode for our bot`")
                 except ChatSendStickersForbiddenError:
+                    tracer.finish_span(span, status="WARN", error="ChatSendStickersForbidden")
                     await edit_delete(
                         check, "`I guess i can't send stickers in this chat`"
                     )
                 except BotResponseTimeoutError:
+                    tracer.finish_span(span, status="WARN", error="BotResponseTimeout")
                     await edit_delete(
                         check, "`The bot didnt answer to your query in time`"
                     )
                 except ChatSendMediaForbiddenError:
+                    tracer.finish_span(span, status="WARN", error="ChatSendMediaForbidden")
                     await edit_delete(check, "`You can't send media in this chat`")
                 except AlreadyInConversationError:
+                    tracer.finish_span(span, status="WARN", error="AlreadyInConversation")
                     await edit_delete(
                         check,
                         "`A conversation is already happening with the given chat. try again after some time.`",
                     )
                 except ChatSendInlineForbiddenError:
+                    tracer.finish_span(span, status="WARN", error="ChatSendInlineForbidden")
                     await edit_delete(
                         check, "`You can't send inline messages in this chat.`"
                     )
                 except FloodWaitError as e:
+                    flood_shield.record_flood_wait(e.seconds)
+                    metrics.record_flood_wait(e.seconds)
+                    tracer.finish_span(span, status="FLOOD_WAIT", error=f"FloodWait: {e.seconds}s")
                     LOGS.error(
-                        f"A flood wait of {e.seconds} occured. wait for {e.seconds} seconds and try"
+                        f"A flood wait of {e.seconds} occurred. Shield enforcing backoff..."
                     )
                     await check.delete()
-                    await asyncio.sleep(e.seconds + 5)
+                    await flood_shield.enforce_rate_limit(e.seconds)
                 except BaseException as e:
+                    lat_ms = (time.perf_counter() - t_start) * 1000.0
+                    metrics.record_command(cmd_tag, lat_ms, success=False)
+                    tracer.finish_span(span, status="ERROR", error=str(e))
                     LOGS.exception(e)
                     if not disable_errors:
                         if Config.PRIVATE_GROUP_BOT_API_ID == 0:
@@ -397,6 +429,13 @@ CatUserBotClient.aetheris_cmd = CatUserBotClient.cat_cmd
 CatUserBotClient.add_task = lambda self, name, coro, desc="", chat_id=None: task_manager.add_task(name, coro, desc, chat_id)
 CatUserBotClient.cancel_task = lambda self, tid: task_manager.cancel_task(tid)
 CatUserBotClient.list_tasks = lambda self: task_manager.list_active_tasks()
+CatUserBotClient.flood_shield = flood_shield
+CatUserBotClient.job_supervisor = job_supervisor
+CatUserBotClient.ai_router = ai_router
+CatUserBotClient.media_service = media_service
+CatUserBotClient.transfer_engine = transfer_engine
+CatUserBotClient.tracer = tracer
+CatUserBotClient.metrics = metrics
 AetherisClient = CatUserBotClient
 
 try:
