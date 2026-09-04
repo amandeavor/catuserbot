@@ -76,11 +76,16 @@ async def startupmessage():
     """
     try:
         if BOTLOG:
-            Config.CATUBLOGO = await catub.tgbot.send_file(
+            pic = (
+                gvarstatus("STARTUP_PIC")
+                or gvarstatus("ALIVE_PIC")
+                or getattr(Config, "STARTUP_PIC", None)
+                or "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg"
+            )
+            Config.AETHERISLOGO = Config.CATUBLOGO = await catub.tgbot.send_file(
                 BOTLOG_CHATID,
-                "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg",
-                caption="**Your CatUserbot has been started successfully.**",
-                buttons=[(Button.url("Support", "https://t.me/catuserbot_support"),)],
+                pic,
+                caption="◈ ─── **A E T H E R I S  U S E R B O T** ─── ◈\n\n⚡ **Status  :** `Online & Operational`\n⏳ **Version :** `v4.0.0 (Turbo)`\n◈ ──────────────────────────── ◈",
             )
     except Exception as e:
         LOGS.error(e)
@@ -230,14 +235,14 @@ async def verifyLoggerGroup():
                 + str(e)
             )
     else:
-        descript = "Don't delete this group or change to group(If you change group all your previous snips, welcome will be lost.)"
+        descript = "Aetheris Userbot Logging Channel. Logs events, errors, tags, and system diagnostics."
         status, groupid = await create_supergroup(
-            "CatUserbot BotLog Group", catub, Config.TG_BOT_USERNAME, descript
+            "Aetheris Bot Log", catub, Config.TG_BOT_USERNAME, descript
         )
         if status != "error" and isinstance(groupid, int):
             addgvar("PRIVATE_GROUP_BOT_API_ID", groupid)
             LOGS.info(
-                "Private Group for PRIVATE_GROUP_BOT_API_ID is created successfully and added to vars."
+                "Private Group for PRIVATE_GROUP_BOT_API_ID (Aetheris Bot Log) created successfully."
             )
             flag = True
         else:

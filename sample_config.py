@@ -164,7 +164,9 @@ class Config(object):
     UPSTREAM_REPO_BRANCH = os.environ.get("UPSTREAM_REPO_BRANCH", "master")
     # dont touch this at all
     SUDO_USERS: Set[int] = set()
+    AETHERISLOGO = None
     CATUBLOGO = None
+    STARTUP_PIC = os.environ.get("STARTUP_PIC", "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg")
     BOTLOG = False
     BOTLOG_CHATID = 0
     # extra plugins realted vars below
