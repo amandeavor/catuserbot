@@ -85,3 +85,27 @@ async def test_callback_single_use():
     await mgr.handle_callback_query(mock_event)
     assert call_count == 1
     mock_event.answer.assert_called_with("⚠️ This button session has expired or is invalid.", alert=True)
+
+
+def test_callback_data_size_strict_limits():
+    """
+    Section 16: Telegram MTProto strictly limits inline callback_data to 1-64 bytes.
+    Verify that generated tokens NEVER exceed 64 bytes even with massive actions or payload metadata.
+    """
+    mgr = SecureCallbackManager()
+
+    # Test 1000 generated tokens
+    for i in range(1000):
+        large_payload = {f"k_{j}": f"v_{j}" * 50 for j in range(20)}
+        token_str = mgr.create_token(
+            action=f"heavy_action_name_that_is_very_long_{i}",
+            payload=large_payload,
+            allowed_user_ids={123456, 789012},
+        )
+
+        encoded_bytes = token_str.encode("utf-8")
+        byte_len = len(encoded_bytes)
+
+        # Telegram MTProto constraint: 1 <= len(callback_data) <= 64 bytes
+        assert 1 <= byte_len <= 64, f"Token {token_str} has length {byte_len}, which exceeds 64 bytes!"
+        assert token_str.startswith("cb:")

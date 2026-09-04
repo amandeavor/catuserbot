@@ -70,22 +70,36 @@ class JobRecord:
 class CancellationToken:
     """Cooperative cancellation token for background jobs."""
 
-    def __init__(self, record: JobRecord):
+    def __init__(self, record: JobRecord, parent_token: Optional["CancellationToken"] = None):
         self._record = record
+        self._parent = parent_token
 
     @property
     def is_cancelled(self) -> bool:
+        if self._parent and self._parent.is_cancelled:
+            return True
         return self._record.cancel_event.is_set() or self._record.status == JobState.CANCELLED
 
     def raise_if_cancelled(self) -> None:
         if self.is_cancelled:
             raise asyncio.CancelledError("Job was cancelled by token.")
 
+    async def sleep(self, seconds: float, poll_interval: float = 0.05) -> None:
+        """Interruptible sleep that exits early if cancelled and pauses if paused."""
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            self.raise_if_cancelled()
+            await self._record.pause_event.wait()
+            self.raise_if_cancelled()
+            await asyncio.sleep(min(poll_interval, max(0.005, deadline - time.time())))
+        self.raise_if_cancelled()
+
 
 class JobSupervisor:
     """
-    Production Global Asynchronous Job Supervisor for Aetheris V5.
+    Structured In-Process Concurrency Supervisor for Aetheris V5.
     Manages structured task concurrency, priority queues, timeouts, and clean cancellation.
+    NOTE: In-process supervisor; jobs are non-durable across process death.
     """
 
     def __init__(self, max_concurrent: int = 10, max_concurrency: Optional[int] = None):
@@ -226,6 +240,15 @@ class JobSupervisor:
     async def cancel(self, job_id: str) -> bool:
         return await self.cancel_job(job_id)
 
+    async def cancel_plugin_jobs(self, plugin_id: str) -> int:
+        """Cancel all running or queued jobs belonging to a specific plugin."""
+        cancelled_count = 0
+        for job in list(self._jobs.values()):
+            if job.plugin_id == plugin_id and job.status in {JobState.QUEUED, JobState.RUNNING, JobState.PAUSED}:
+                if await self.cancel_job(job.job_id):
+                    cancelled_count += 1
+        return cancelled_count
+
     def pause_job(self, job_id: str) -> bool:
         record = self._jobs.get(job_id)
         if not record or record.status != JobState.RUNNING:
@@ -241,6 +264,22 @@ class JobSupervisor:
         record.pause_event.set()
         record.status = JobState.RUNNING
         return True
+
+    def prune_completed_jobs(self, max_retained: int = 1000) -> int:
+        """Prune historical completed/failed jobs to prevent memory growth."""
+        finished = [
+            j for j in self._jobs.values()
+            if j.status in {JobState.COMPLETED, JobState.FAILED, JobState.CANCELLED}
+        ]
+        if len(finished) <= max_retained:
+            return 0
+
+        # Sort by completed_at ascending
+        finished.sort(key=lambda j: j.completed_at or 0.0)
+        to_prune = len(finished) - max_retained
+        for i in range(to_prune):
+            self._jobs.pop(finished[i].job_id, None)
+        return to_prune
 
     def get_job(self, job_id: str) -> Optional[JobRecord]:
         return self._jobs.get(job_id)

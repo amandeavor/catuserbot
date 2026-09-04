@@ -153,3 +153,4 @@ class SecureCallbackManager:
 
 
 secure_callbacks = SecureCallbackManager()
+callback_manager = secure_callbacks

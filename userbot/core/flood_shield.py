@@ -15,11 +15,11 @@ LOGS = logging.getLogger("Aetheris.FloodShield")
 
 
 class RPCLane(enum.IntEnum):
-    P0_SYSTEM = 0      # Session, auth, ping, heartbeats
+    P0_SYSTEM = 0      # Session, auth, ping, heartbeats (NEVER blocked or delayed)
     P1_OWNER = 1       # Direct owner interactive commands
     P2_NORMAL = 2      # Regular outgoing messages / replies
     P3_PLUGIN = 3      # Standard plugin actions
-    P4_JOB = 4         # Supervised background jobs
+    P4_JOB = 4         # Supervised background jobs / file transfers
     P5_ARCHIVE = 5     # Batch scraping / mass archival
 
 
@@ -92,17 +92,34 @@ class TokenBucket:
             return wait_time
 
 
+def calculate_flood_wait(seconds: float, min_jitter: float = 0.5, max_jitter: float = 2.0) -> float:
+    """
+    Computes required flood wait duration ensuring strict compliance with FLOOD_WAIT_X.
+    Rule 9: The scheduler must NEVER retry before X seconds. Positive jitter may be added,
+    guaranteeing wait_time >= seconds.
+    """
+    base_wait = float(max(0.0, seconds))
+    if base_wait < 1.0:
+        positive_jitter = random.uniform(0.01, 0.05)
+    else:
+        positive_jitter = random.uniform(max(0.1, min_jitter), max_jitter)
+    
+    total = base_wait + positive_jitter
+    assert total >= base_wait, "Calculated flood wait cannot be less than authoritative seconds"
+    return total
+
+
 class FloodShieldV5:
     """
     Centralized RPC traffic controller and rate-limiting shield for Aetheris V5.
-    Guarantees strict compliance with Telegram FLOOD_WAIT_X with positive jitter
-    and prioritizes interactive owner traffic over background jobs.
+    Intercepts and governs all outbound MTProto RPC calls at the lowest boundary.
+    Guarantees strict compliance with Telegram FLOOD_WAIT_X with positive jitter.
     """
 
     def __init__(self):
         self._circuit_breakers: Dict[str, CircuitBreaker] = {}
         self._peer_buckets: Dict[str, TokenBucket] = {}
-        self._global_bucket = TokenBucket(capacity=20.0, refill_rate=5.0)
+        self._global_bucket = TokenBucket(capacity=25.0, refill_rate=6.0)
         self._active_flood_until: float = 0.0
         self._flood_count: int = 0
         self._lock = asyncio.Lock()
@@ -111,17 +128,21 @@ class FloodShieldV5:
     def flood_count(self) -> int:
         return self._flood_count
 
-    def record_flood_wait(self, seconds: float) -> None:
+    def record_flood_wait(self, seconds: float) -> float:
+        """Records an authoritative FloodWaitError and calculates wait duration."""
         self._flood_count += 1
-        jitter = random.uniform(0.5, 2.0)
-        self._active_flood_until = max(self._active_flood_until, time.time() + seconds + jitter)
+        total_wait = calculate_flood_wait(seconds)
+        now = time.time()
+        self._active_flood_until = max(self._active_flood_until, now + total_wait)
+        return total_wait
 
-    async def enforce_rate_limit(self, seconds: float) -> None:
-        self.record_flood_wait(seconds)
-        jitter = random.uniform(0.005, 0.02) if seconds < 1.0 else random.uniform(0.5, 2.0)
-        await asyncio.sleep(seconds + jitter)
+    async def enforce_rate_limit(self, seconds: float) -> float:
+        total_wait = self.record_flood_wait(seconds)
+        await asyncio.sleep(total_wait)
+        return total_wait
 
     async def acquire_slot(self, lane: RPCLane = RPCLane.P2_NORMAL, peer_id: Optional[str] = None) -> bool:
+        # System maintenance traffic never blocks on floodwaits
         if lane == RPCLane.P0_SYSTEM:
             return True
         now = time.time()
@@ -147,70 +168,64 @@ class FloodShieldV5:
     ) -> Any:
         """
         Executes an RPC coroutine wrapped with rate limiting, circuit breaking,
-        authoritative flood wait enforcement, and exponential backoff.
+        authoritative flood wait enforcement, and positive-jitter retries.
         """
-        cb = self.get_circuit_breaker(cb_key)
-        if not cb.can_execute():
-            raise RuntimeError(f"Circuit breaker for '{cb_key}' is OPEN. Operation paused.")
+        # P0_SYSTEM bypasses circuit breakers and rate limits to keep connection alive
+        if lane != RPCLane.P0_SYSTEM:
+            cb = self.get_circuit_breaker(cb_key)
+            if not cb.can_execute():
+                raise RuntimeError(f"Circuit breaker for '{cb_key}' is OPEN. Operation paused.")
 
-        # If an authoritative flood wait is active, check lane priority
-        now = time.time()
-        if now < self._active_flood_until:
-            wait_rem = self._active_flood_until - now
-            if lane in {RPCLane.P4_JOB, RPCLane.P5_ARCHIVE}:
-                LOGS.debug("Background traffic lane %s yielding due to active floodwait (%.1fs remaining)", lane.name, wait_rem)
-                await asyncio.sleep(wait_rem)
-            else:
+            # If a flood wait is active, wait until it clears
+            now = time.time()
+            if now < self._active_flood_until:
+                wait_rem = self._active_flood_until - now
                 await asyncio.sleep(wait_rem)
 
-        # Peer and global rate-limiting tokens
-        if peer_id:
-            if peer_id not in self._peer_buckets:
-                self._peer_buckets[peer_id] = TokenBucket(capacity=5.0, refill_rate=2.0)
-            peer_wait = await self._peer_buckets[peer_id].consume(1.0)
-            if peer_wait > 0:
-                await asyncio.sleep(peer_wait)
+            # Peer and global rate-limiting tokens
+            if peer_id:
+                if peer_id not in self._peer_buckets:
+                    self._peer_buckets[peer_id] = TokenBucket(capacity=5.0, refill_rate=2.0)
+                peer_wait = await self._peer_buckets[peer_id].consume(1.0)
+                if peer_wait > 0:
+                    await asyncio.sleep(peer_wait)
 
-        global_wait = await self._global_bucket.consume(1.0)
-        if global_wait > 0:
-            await asyncio.sleep(global_wait)
+            global_wait = await self._global_bucket.consume(1.0)
+            if global_wait > 0:
+                await asyncio.sleep(global_wait)
+        else:
+            cb = None
 
-        # Execute with authoritative FloodWait interceptor
         retries = 0
         backoff = 1.0
 
         while True:
             try:
                 result = await coro_fn(*args, **kwargs)
-                cb.record_success()
+                if cb:
+                    cb.record_success()
                 return result
             except Exception as exc:
                 exc_str = str(exc)
                 exc_type = type(exc).__name__
 
                 # Check for Telegram FloodWaitError
-                # Both telethon.errors.FloodWaitError and generic RPC containing seconds
                 is_flood = "FloodWait" in exc_type or "FLOOD_WAIT" in exc_str
                 if is_flood:
-                    cb.record_failure()
+                    if cb:
+                        cb.record_failure()
                     # Extract authoritative seconds
                     seconds = getattr(exc, "seconds", None)
                     if seconds is None:
-                        # Extract from message if string pattern
                         import re
                         m = re.search(r"(\d+)\s*seconds?", exc_str)
                         seconds = int(m.group(1)) if m else 5
 
-                    # Rule 13: Wait AT LEAST X seconds + positive jitter. NEVER retry early.
-                    positive_jitter = random.uniform(0.5, 2.0)
-                    total_wait = float(seconds) + positive_jitter
-                    self._active_flood_until = time.time() + total_wait
-
+                    total_wait = self.record_flood_wait(float(seconds))
                     LOGS.warning(
-                        "Authoritative Telegram FloodWait of %ds detected. Enforcing shield wait of %.2fs (jitter: +%.2fs)",
+                        "Authoritative Telegram FloodWait of %ss detected. Enforcing shield wait of %.2fs",
                         seconds,
                         total_wait,
-                        positive_jitter,
                     )
                     await asyncio.sleep(total_wait)
                     retries += 1
@@ -227,12 +242,12 @@ class FloodShieldV5:
                     retries += 1
                     sleep_time = backoff + random.uniform(0.1, 0.5)
                     backoff *= 2.0
-                    LOGS.debug("Transient error %s. Exponential retry in %.2fs (attempt %d/%d)", exc_type, sleep_time, retries, max_retries)
+                    LOGS.debug("Transient error %s. Retrying in %.2fs (attempt %d/%d)", exc_type, sleep_time, retries, max_retries)
                     await asyncio.sleep(sleep_time)
                     continue
 
-                # Non-transient error
-                cb.record_failure()
+                if cb:
+                    cb.record_failure()
                 raise
 
 

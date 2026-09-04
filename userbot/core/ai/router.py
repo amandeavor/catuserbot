@@ -77,20 +77,38 @@ class AIRouterV5:
 
     async def complete(
         self,
-        options: AIRequestOptions,
+        options: Any,
         preferred_provider: Optional[str] = None,
         chat_key: Optional[str] = None,
+        provider: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        **kwargs: Any,
     ) -> AIResponse:
         """
         Execute completion with automatic fallback cascade.
+        Accepts either an AIRequestOptions instance or a plain prompt string.
         """
+        if isinstance(options, str):
+            req_options = AIRequestOptions(
+                prompt=options,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        else:
+            req_options = options
+
+        pref = provider or preferred_provider
+
         # Inject conversational memory if chat_key is provided
-        if chat_key and not options.context_messages:
-            options.context_messages = self.memory.get_context(chat_key)
+        if chat_key and not req_options.context_messages:
+            req_options.context_messages = self.memory.get_context(chat_key)
 
         candidates: List[str] = []
-        if preferred_provider and preferred_provider in self.providers:
-            candidates.append(preferred_provider)
+        if pref and pref in self.providers:
+            candidates.append(pref)
         for p in self.default_order:
             if p not in candidates and p in self.providers:
                 candidates.append(p)
@@ -105,11 +123,11 @@ class AIRouterV5:
             provider = self.providers[p_name]
             try:
                 LOG.info(f"Dispatching AI request to provider: {p_name}")
-                response = await provider.complete(options)
+                response = await provider.complete(req_options)
                 circuit.record_success()
 
                 if chat_key:
-                    self.memory.add_turn(chat_key, options.prompt, response.text)
+                    self.memory.add_turn(chat_key, req_options.prompt, response.text)
 
                 return response
             except Exception as err:

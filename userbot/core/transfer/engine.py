@@ -12,9 +12,16 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 LOGS = logging.getLogger("Aetheris.TransferEngine")
 
-# MTProto Standard Chunk Boundaries
-STANDARD_CHUNK_SIZE = 512 * 1024  # 512 KB
-SMALL_CHUNK_SIZE = 128 * 1024     # 128 KB for smaller files
+# MTProto Authoritative Limits
+# According to Telegram MTProto specifications:
+# upload.saveFilePart and upload.saveBigFilePart require part_size to divide evenly by 1024 bytes (1 KB)
+# and NEVER exceed 512 KiB (524,288 bytes). Any chunk > 512 KiB returns 400: FILE_PART_TOO_BIG.
+MAX_CHUNK_SIZE = 512 * 1024      # 512 KiB (Authoritative Telegram MTProto Maximum)
+MIN_CHUNK_SIZE = 32 * 1024       # 32 KiB
+BIG_FILE_THRESHOLD = 10 * 1024 * 1024  # 10 MB (Boundary for saveFilePart vs saveBigFilePart)
+MAX_PARTS_STANDARD = 4000        # Max parts for standard files up to 2 GB (4000 * 512KB)
+MAX_PARTS_EXTENDED = 8000        # Max parts for files up to 4 GB (Premium)
+MAX_FILE_SIZE = 4 * 1024 * 1024 * 1024  # 4 GiB maximum Telegram limit
 
 
 @dataclass
@@ -29,27 +36,65 @@ class ChunkPlan:
     file_size: int
     chunk_size: int
     total_parts: int
+    rpc_method: str
     offsets: List[Tuple[int, int]]  # [(part_index, byte_offset)]
 
 
 class ChunkPlanner:
-    """Calculates optimal MTProto chunk offsets and part boundaries."""
+    """
+    Calculates compliant MTProto chunk offsets and part boundaries.
+    Enforces Telegram MTProto constraints:
+      - Max part size: exactly 512 KiB
+      - Part size divisibility: must divide by 1024 bytes
+      - Standard part sizes: 64KB, 128KB, 256KB, 512KB
+      - Max parts: 4,000 (up to 2GB) or 8,000 (up to 4GB)
+      - Non-final parts must be exactly chunk_size
+      - Final part must be <= chunk_size
+      - Big file threshold: >10 MB uses upload.saveBigFilePart
+    """
+
+    @staticmethod
+    def is_big_file(file_size: int) -> bool:
+        return file_size > BIG_FILE_THRESHOLD
+
+    @staticmethod
+    def get_rpc_method(file_size: int) -> str:
+        return "upload.saveBigFilePart" if file_size > BIG_FILE_THRESHOLD else "upload.saveFilePart"
 
     @staticmethod
     def determine_chunk_size(file_size: int) -> int:
-        if file_size < 10 * 1024 * 1024:
-            return 128 * 1024
-        elif file_size < 50 * 1024 * 1024:
-            return 256 * 1024
-        elif file_size < 500 * 1024 * 1024:
-            return 512 * 1024
+        if file_size > MAX_FILE_SIZE:
+            raise ValueError(f"File size {file_size} exceeds Telegram's 4 GiB hard maximum limit")
+
+        if file_size <= 10 * 1024 * 1024:
+            return 128 * 1024  # 128 KiB
+        elif file_size <= 100 * 1024 * 1024:
+            return 256 * 1024  # 256 KiB
         else:
-            return 1024 * 1024
+            # Telegram MTProto strictly caps part size at 512 KiB
+            return 512 * 1024  # 512 KiB (STRICT MAXIMUM)
 
     @staticmethod
     def plan_chunks(file_size: int, chunk_size: Optional[int] = None) -> List[ChunkInfo]:
         c_size = chunk_size or ChunkPlanner.determine_chunk_size(file_size)
-        total_parts = (file_size + c_size - 1) // c_size
+        
+        # Enforce MTProto constraints
+        if c_size > MAX_CHUNK_SIZE:
+            LOGS.warning(f"Requested chunk size {c_size} exceeds MTProto 512 KiB limit; clamping to {MAX_CHUNK_SIZE}")
+            c_size = MAX_CHUNK_SIZE
+        if c_size % 1024 != 0:
+            c_size = (c_size // 1024) * 1024
+
+        total_parts = (file_size + c_size - 1) // c_size if file_size > 0 else 0
+        max_allowed_parts = MAX_PARTS_EXTENDED if file_size > (2 * 1024 * 1024 * 1024) else MAX_PARTS_STANDARD
+        
+        if total_parts > max_allowed_parts:
+            # If parts exceed limit, force maximum chunk size of 512 KiB
+            c_size = MAX_CHUNK_SIZE
+            total_parts = (file_size + c_size - 1) // c_size
+            if total_parts > MAX_PARTS_EXTENDED:
+                raise ValueError(f"File size {file_size} cannot fit within MTProto part limits ({total_parts} > {MAX_PARTS_EXTENDED})")
+
         chunks = []
         for i in range(total_parts):
             offset = i * c_size
@@ -60,8 +105,14 @@ class ChunkPlanner:
     @staticmethod
     def plan(file_size: int, preferred_chunk_size: Optional[int] = None) -> ChunkPlan:
         chunk_size = preferred_chunk_size or ChunkPlanner.determine_chunk_size(file_size)
+        if chunk_size > MAX_CHUNK_SIZE:
+            chunk_size = MAX_CHUNK_SIZE
         chunk_size = (chunk_size // 1024) * 1024
-        total_parts = (file_size + chunk_size - 1) // chunk_size
+
+        total_parts = (file_size + chunk_size - 1) // chunk_size if file_size > 0 else 0
+        if total_parts > MAX_PARTS_STANDARD and chunk_size < MAX_CHUNK_SIZE:
+            chunk_size = MAX_CHUNK_SIZE
+            total_parts = (file_size + chunk_size - 1) // chunk_size
 
         offsets = []
         for part_index in range(total_parts):
@@ -72,6 +123,7 @@ class ChunkPlanner:
             file_size=file_size,
             chunk_size=chunk_size,
             total_parts=total_parts,
+            rpc_method=ChunkPlanner.get_rpc_method(file_size),
             offsets=offsets,
         )
 
@@ -81,7 +133,7 @@ class TransferProgress:
     total_bytes: int
     transferred_bytes: int
     percentage: float
-    speed_bps: float  # Bytes per second
+    speed_bps: float
     eta_seconds: float
 
 

@@ -4,11 +4,19 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import asyncio
+import enum
 import logging
 import time
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple
 
 from .manifest import PluginManifest
+
+
+class GenerationState(enum.Enum):
+    CREATED = "CREATED"
+    ACTIVE = "ACTIVE"
+    DRAINING = "DRAINING"
+    UNLOADED = "UNLOADED"
 
 
 class PluginGeneration:

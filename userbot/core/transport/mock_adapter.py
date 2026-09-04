@@ -33,6 +33,9 @@ class MockTransportAdapter(ITelegramTransport):
         self.edited_messages: List[MockMessage] = []
         self.deleted_message_ids: List[int] = []
 
+    async def connect(self) -> None:
+        self._connected = True
+
     async def send_message(
         self,
         chat_id: Any,
@@ -143,3 +146,6 @@ class MockTransportAdapter(ITelegramTransport):
 
     async def disconnect(self) -> None:
         self._connected = False
+
+
+MockAdapter = MockTransportAdapter

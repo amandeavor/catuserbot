@@ -409,6 +409,44 @@ class CatUserBotClient(TelegramClient):
             traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
         )
 
+    async def __call__(self, request, ordered=False):
+        """
+        Intercept all outbound MTProto RPC requests at the lowest common boundary.
+        Categorizes requests into priority lanes and enforces FloodShieldV5 protection.
+        """
+        req_type = type(request).__name__
+        is_maintenance = any(
+            req_type.startswith(p)
+            for p in (
+                "Ping",
+                "GetState",
+                "InitConnection",
+                "InvokeWithLayer",
+                "DestroySession",
+                "GetDifference",
+                "GetConfig",
+                "GetNearestDc",
+            )
+        )
+        if is_maintenance:
+            return await super().__call__(request, ordered=ordered)
+
+        from userbot.core.flood_shield import RPCLane
+        if any(req_type.startswith(p) for p in ("SaveFilePart", "SaveBigFilePart", "GetFile")):
+            lane = RPCLane.P4_JOB
+        elif any(req_type.startswith(p) for p in ("DeleteMessages", "GetHistory", "ReadHistory")):
+            lane = RPCLane.P3_PLUGIN
+        else:
+            lane = RPCLane.P2_NORMAL
+
+        return await flood_shield.execute(
+            super().__call__,
+            request,
+            ordered=ordered,
+            lane=lane,
+            cb_key=f"rpc_{req_type}",
+        )
+
     def _kill_running_processes(self) -> None:
         """Kill all the running asyncio subprocessess"""
         for _, process in self.running_processes.items():

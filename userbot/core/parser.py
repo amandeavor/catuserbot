@@ -6,7 +6,7 @@
 import enum
 import re
 from dataclasses import dataclass, field, is_dataclass
-from typing import Any, Dict, List, Optional, Tuple, Type, get_type_hints
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, get_type_hints
 
 
 class TokenType(enum.Enum):
@@ -148,8 +148,14 @@ class ParsedCommand:
     raw_query: str = ""
     raw_text: str = ""
 
-    def get_flag(self, name: str, default: Any = None) -> Any:
-        return self.flags.get(name, default)
+    def get_flag(self, name: str, default: Any = None, type_cast: Optional[Callable[[Any], Any]] = None) -> Any:
+        val = self.flags.get(name, default)
+        if val is not None and type_cast is not None and val is not default:
+            try:
+                return type_cast(val)
+            except Exception:
+                return default
+        return val
 
     def has_flag(self, name: str) -> bool:
         return name in self.flags

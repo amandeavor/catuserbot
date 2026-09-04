@@ -4,8 +4,10 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import asyncio
+import hmac
 import json
 import logging
+import os
 import secrets
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
@@ -18,18 +20,21 @@ from userbot.core.plugins.registry import atomic_registry
 from userbot.core.web.templates import DASHBOARD_HTML
 
 LOG = logging.getLogger("Aetheris.Web")
+MAX_REQUEST_BODY = 64 * 1024  # 64 KB max request body to prevent memory exhaustion
 
 
 class DashboardServer:
     """
-    Lightweight zero-dependency async HTTP server for local Aetheris V5 telemetry & control.
-    Binds strictly to 127.0.0.1 by default with bearer token authentication.
+    Hardened lightweight async HTTP control plane for Aetheris V5.
+    Binds strictly to 127.0.0.1 by default with constant-time HMAC bearer token verification.
     """
 
     def __init__(self, host: str = "127.0.0.1", port: int = 8080, auth_token: Optional[str] = None):
         self.host = host
         self.port = port
-        self.auth_token = auth_token or secrets.token_urlsafe(16)
+        # Never use insecure default credentials; draw from env or generate a secure random token
+        env_token = os.environ.get("V5_DASHBOARD_TOKEN")
+        self.auth_token = auth_token or env_token or secrets.token_urlsafe(32)
         self.server: Optional[asyncio.Server] = None
         self._running = False
 
@@ -38,7 +43,7 @@ class DashboardServer:
             return
         self.server = await asyncio.start_server(self._handle_client, self.host, self.port)
         self._running = True
-        LOG.info(f"Aetheris V5 Web Dashboard active at http://{self.host}:{self.port} (Token: {self.auth_token})")
+        LOG.info(f"Aetheris V5 Web Dashboard active at http://{self.host}:{self.port} (Token: {self.auth_token[:6]}...[PROTECTED])")
 
     async def stop(self) -> None:
         if self.server:
@@ -46,6 +51,24 @@ class DashboardServer:
             await self.server.wait_closed()
             self._running = False
             LOG.info("Aetheris V5 Web Dashboard stopped.")
+
+    def _is_authorized(self, auth_header: str, token_in_query: Optional[str]) -> bool:
+        """Constant-time token verification to prevent timing side-channel attacks."""
+        expected = self.auth_token.encode("utf-8")
+        
+        # Check Bearer authorization header
+        if auth_header.startswith("Bearer "):
+            provided = auth_header[7:].strip().encode("utf-8")
+            if hmac.compare_digest(provided, expected):
+                return True
+                
+        # Check query parameter token
+        if token_in_query:
+            provided = token_in_query.strip().encode("utf-8")
+            if hmac.compare_digest(provided, expected):
+                return True
+
+        return False
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
@@ -76,27 +99,29 @@ class DashboardServer:
                     k, v = decoded_h.split(":", 1)
                     headers[k.strip().lower()] = v.strip()
 
-            # Read body if Content-Length given
+            # Enforce body size limit
             content_length = int(headers.get("content-length", 0))
+            if content_length > MAX_REQUEST_BODY:
+                await self._send_response(writer, 413, "application/json", json.dumps({"error": "Payload Too Large"}).encode())
+                return
+
             body = b""
             if content_length > 0:
                 body = await reader.readexactly(content_length)
 
-            # Optional Auth check (allow query token or Authorization header or localhost dev)
             auth_header = headers.get("authorization", "")
             token_in_query = query_params.get("token", [None])[0]
-            authenticated = (
-                auth_header == f"Bearer {self.auth_token}"
-                or token_in_query == self.auth_token
-                or self.host == "127.0.0.1"  # Local loopback convenience
-            )
+            is_authed = self._is_authorized(auth_header, token_in_query)
 
-            if not authenticated:
-                await self._send_response(writer, 401, "application/json", json.dumps({"error": "Unauthorized"}).encode())
-                return
+            # Privileged API endpoints strictly require valid token authentication
+            if path.startswith("/api/"):
+                if not is_authed:
+                    await self._send_response(writer, 401, "application/json", json.dumps({"error": "Unauthorized: Valid token required"}).encode())
+                    return
 
             # Route requests
             if method == "GET" and (path == "/" or path == "/dashboard"):
+                # Pass token context or UI template
                 await self._send_response(writer, 200, "text/html; charset=utf-8", DASHBOARD_HTML.encode("utf-8"))
             elif method == "GET" and path == "/api/status":
                 status_payload = self._build_status_payload()
@@ -115,7 +140,7 @@ class DashboardServer:
                 ]
                 await self._send_response(writer, 200, "application/json", json.dumps(traces_payload).encode("utf-8"))
             elif method == "POST" and path == "/api/plugins/reload":
-                # Trigger async reload
+                # Trigger async reload safely
                 asyncio.create_task(plugin_manager.reload_all())
                 await self._send_response(
                     writer, 200, "application/json", json.dumps({"message": "Plugin reload initiated"}).encode("utf-8")
@@ -133,6 +158,7 @@ class DashboardServer:
                 pass
 
     def _build_status_payload(self) -> Dict[str, Any]:
+        """Build status report with absolute masking of sensitive credentials."""
         jobs = [
             {
                 "id": j.job_id,
@@ -145,15 +171,20 @@ class DashboardServer:
         ]
         return {
             "status": "operational",
+            "version": "5.0.0-rc1",
             "metrics": metrics.get_snapshot(),
             "plugins": {
                 "total_handlers": len(atomic_registry.handlers),
             },
             "jobs": jobs,
+            "security": {
+                "auth_enforced": True,
+                "credentials_masked": True,
+            }
         }
 
     async def _send_response(self, writer: asyncio.StreamWriter, status_code: int, content_type: str, body: bytes) -> None:
-        status_texts = {200: "OK", 401: "Unauthorized", 404: "Not Found", 500: "Internal Server Error"}
+        status_texts = {200: "OK", 401: "Unauthorized", 404: "Not Found", 413: "Payload Too Large", 500: "Internal Server Error"}
         header = (
             f"HTTP/1.1 {status_code} {status_texts.get(status_code, 'OK')}\r\n"
             f"Content-Type: {content_type}\r\n"

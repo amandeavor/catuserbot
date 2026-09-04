@@ -1,0 +1,12 @@
+{
+  "total_plugins_audited": 138,
+  "total_commands_discovered": 396,
+  "total_watchers_discovered": 8,
+  "missing_commands_in_v5": [],
+  "changed_aliases": [],
+  "duplicate_commands": [],
+  "missing_watchers": [],
+  "duplicate_watchers": [],
+  "registration_order_changes": [],
+  "v4_to_v5_command_parity_ratio": 1.0
+}

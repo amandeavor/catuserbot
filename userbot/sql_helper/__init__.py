@@ -3,9 +3,12 @@
 # Licensed under the GNU Affero General Public License v3.0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
+import enum
 import os
+import time
+from typing import Optional
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -16,33 +19,117 @@ LOGS = logging.getLogger("Aetheris.DB")
 BASE = declarative_base()
 
 
+class StorageMode(enum.Enum):
+    SQLITE = "SQLITE"
+    POSTGRESQL = "POSTGRESQL"
+
+
+STORAGE_MODE: StorageMode = StorageMode.SQLITE
 ENGINE = None
+SESSION: Optional[scoped_session] = None
+
+
+def get_storage_mode() -> str:
+    """Returns the current explicit storage mode ('SQLITE' or 'POSTGRESQL')."""
+    return STORAGE_MODE.value
+
+
+def _resolve_storage_mode(raw_uri: Optional[str]) -> tuple[StorageMode, str]:
+    if not raw_uri or raw_uri.strip().lower() in {"none", "null", "sqlite"}:
+        return StorageMode.SQLITE, "sqlite:///aetheris.db"
+    
+    clean_uri = raw_uri.strip()
+    if clean_uri.startswith("sqlite"):
+        return StorageMode.SQLITE, clean_uri
+
+    if "postgres://" in clean_uri:
+        clean_uri = clean_uri.replace("postgres://", "postgresql://", 1)
+
+    return StorageMode.POSTGRESQL, clean_uri
 
 
 def start() -> scoped_session:
-    global ENGINE
-    db_uri = getattr(Config, "DB_URI", None)
-    if not db_uri or db_uri.strip().lower() in {"none", "null", "sqlite"}:
-        db_uri = "sqlite:///aetheris.db"
-        LOGS.info("No external PostgreSQL DB_URI found; using resilient local SQLite storage: %s", db_uri)
-    elif "postgres://" in db_uri:
-        db_uri = db_uri.replace("postgres://", "postgresql://", 1)
+    global ENGINE, STORAGE_MODE, SESSION
+
+    raw_uri = getattr(Config, "DB_URI", None)
+    mode, db_uri = _resolve_storage_mode(raw_uri)
+    STORAGE_MODE = mode
 
     connect_args = {}
-    if db_uri.startswith("sqlite"):
+    if STORAGE_MODE == StorageMode.SQLITE:
         connect_args["check_same_thread"] = False
+        LOGS.info("Explicit SQLite storage mode active: %s", db_uri)
+    else:
+        LOGS.info("Explicit PostgreSQL storage mode configured: %s", db_uri.split("@")[-1] if "@" in db_uri else "postgresql")
 
-    ENGINE = create_engine(db_uri, connect_args=connect_args)
-    BASE.metadata.bind = ENGINE
-    BASE.metadata.create_all(ENGINE)
-    return scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
+    max_attempts = 1 if STORAGE_MODE == StorageMode.SQLITE else 3
+    last_err = None
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            candidate_engine = create_engine(db_uri, connect_args=connect_args)
+            # Verify connectivity immediately with a ping before setting global state
+            with candidate_engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+            ENGINE = candidate_engine
+            BASE.metadata.bind = ENGINE
+            BASE.metadata.create_all(ENGINE)
+            SESSION = scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
+            return SESSION
+        except Exception as exc:
+            last_err = exc
+            LOGS.warning("Database connection attempt %d/%d failed: %s", attempt, max_attempts, exc)
+            if attempt < max_attempts:
+                time.sleep(1.0)
+
+    # If PostgreSQL fails, DO NOT silently switch to SQLite.
+    # Silent failover creates split-brain state when PostgreSQL recovers.
+    if STORAGE_MODE == StorageMode.POSTGRESQL:
+        err_msg = (
+            f"Configured PostgreSQL database is unreachable after {max_attempts} attempts: {last_err}. "
+            "To prevent split-brain state loss, Aetheris V5 strictly refuses to silently switch to SQLite. "
+            "Verify your PostgreSQL connection or remove DB_URI to explicitly run in SQLite mode."
+        )
+        LOGS.critical(err_msg)
+        raise RuntimeError(err_msg)
+
+    # SQLite fallback error (e.g. disk permission issue)
+    raise RuntimeError(f"Failed to initialize SQLite database '{db_uri}': {last_err}")
 
 
+def check_connection() -> bool:
+    """Verifies that the database engine is healthy and accepting queries."""
+    if ENGINE is None:
+        return False
+    try:
+        with ENGINE.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        return True
+    except Exception:
+        return False
+
+
+def reconnect() -> bool:
+    """Attempts to reconnect to the authoritative database."""
+    global SESSION
+    try:
+        SESSION = start()
+        return True
+    except Exception as e:
+        LOGS.error("Database reconnection failed: %s", e)
+        return False
+
+
+# Initialize authoritative session at import
 try:
     SESSION = start()
 except Exception as e:
-    LOGS.error("Error initializing primary database: %s. Falling back to local SQLite.", e)
-    ENGINE = create_engine("sqlite:///aetheris.db", connect_args={"check_same_thread": False})
-    BASE.metadata.bind = ENGINE
-    BASE.metadata.create_all(ENGINE)
-    SESSION = scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
+    LOGS.error("Fatal database initialization error: %s", e)
+    # If explicit SQLite fails, provide a memory-based failover for testing/emergency diagnostics only
+    if STORAGE_MODE == StorageMode.SQLITE:
+        ENGINE = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+        BASE.metadata.bind = ENGINE
+        BASE.metadata.create_all(ENGINE)
+        SESSION = scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
+    else:
+        raise

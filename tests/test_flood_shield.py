@@ -5,8 +5,16 @@
 
 import asyncio
 import time
+from unittest.mock import AsyncMock, patch
 import pytest
-from userbot.core.flood_shield import CircuitBreaker, CircuitState, FloodShieldV5, TrafficPriority
+
+from userbot.core.flood_shield import (
+    CircuitBreaker,
+    CircuitState,
+    FloodShieldV5,
+    RPCLane,
+    calculate_flood_wait,
+)
 
 
 def test_circuit_breaker_transitions():
@@ -28,21 +36,72 @@ def test_circuit_breaker_transitions():
     assert cb.state == CircuitState.CLOSED
 
 
+def test_flood_wait_semantics_never_retries_before_x():
+    """
+    Section 9: When Telegram returns FLOOD_WAIT_X, the scheduler MUST NOT
+    retry before X seconds. Positive jitter may be added, but calculated duration
+    must never be less than X.
+    """
+    test_durations = [0.1, 1.0, 5.0, 30.0, 120.0, 3600.0]
+    for x in test_durations:
+        wait_val = calculate_flood_wait(x)
+        assert wait_val >= x, f"Wait time {wait_val} was less than authoritative {x}s!"
+        # Verify jitter is strictly positive
+        assert (wait_val - x) > 0.0, "Jitter must be strictly positive"
+
+
 @pytest.mark.asyncio
-async def test_flood_shield_acquire():
+async def test_flood_shield_acquire_and_system_bypass():
     shield = FloodShieldV5()
-    # High-priority lane should acquire immediately
-    acquired = await shield.acquire_slot(TrafficPriority.P0_SYSTEM)
+    # P0_SYSTEM must acquire immediately even if shield is under flood wait
+    shield.record_flood_wait(10.0)
+    assert shield._active_flood_until > time.time()
+
+    # System maintenance traffic bypasses active flood wait
+    acquired = await shield.acquire_slot(RPCLane.P0_SYSTEM)
     assert acquired is True
 
 
 @pytest.mark.asyncio
-async def test_flood_shield_rate_limit_backoff():
+async def test_flood_shield_central_execution_and_retry():
     shield = FloodShieldV5()
+    call_count = 0
+
+    class FakeFloodError(Exception):
+        seconds = 0.05
+
+    async def mock_rpc_call():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            raise FakeFloodError("FLOOD_WAIT_0")
+        return "RPC_SUCCESS"
+
+    # Execution should catch FakeFloodError, wait authoritative time + positive jitter, and succeed on retry
     t0 = time.perf_counter()
-    # Enforce a tiny wait (0.05s)
-    await shield.enforce_rate_limit(seconds=0.05)
+    result = await shield.execute(mock_rpc_call, lane=RPCLane.P2_NORMAL, cb_key="test_rpc")
     elapsed = time.perf_counter() - t0
-    # Should take at least 0.05s
-    assert elapsed >= 0.05
-    assert shield.flood_count == 1
+
+    assert result == "RPC_SUCCESS"
+    assert call_count == 2
+    assert elapsed >= 0.05, f"Elapsed {elapsed}s was less than authoritative wait of 0.05s"
+
+
+@pytest.mark.asyncio
+async def test_flood_shield_rpc_families_scheduling():
+    shield = FloodShieldV5()
+
+    async def dummy_rpc(name: str):
+        return f"handled_{name}"
+
+    # P0_SYSTEM (Pings, Heartbeats)
+    res_sys = await shield.execute(dummy_rpc, "ping", lane=RPCLane.P0_SYSTEM)
+    assert res_sys == "handled_ping"
+
+    # P4_JOB (File Uploads / Downloads)
+    res_job = await shield.execute(dummy_rpc, "upload_part", lane=RPCLane.P4_JOB)
+    assert res_job == "handled_upload_part"
+
+    # P2_NORMAL (Messages / Interactive)
+    res_msg = await shield.execute(dummy_rpc, "send_msg", lane=RPCLane.P2_NORMAL)
+    assert res_msg == "handled_send_msg"

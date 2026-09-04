@@ -27,6 +27,10 @@ class AIResponse:
     usage: Dict[str, int] = field(default_factory=dict)
     cached: bool = False
 
+    @property
+    def content(self) -> str:
+        return self.text
+
 
 @runtime_checkable
 class AIProvider(Protocol):
