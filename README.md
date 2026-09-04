@@ -1,4 +1,4 @@
-# ◈ AETHERIS USERBOT v4.0 ◈
+# ◈ AETHERIS USERBOT v5.0 ◈
 
 > The most refined, high-performance, and aesthetic Telegram userbot engine. Built on Telethon with intelligent asynchronous task management, live dynamic hot-reloading, CLI flag parsing, and multi-tier AI routing.
 

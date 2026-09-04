@@ -16,7 +16,7 @@ from pathlib import Path
 
 from telethon import Button, functions, types, utils
 
-from userbot import BOTLOG, BOTLOG_CHATID, PM_LOGGER_GROUP_ID
+from userbot import BOTLOG, BOTLOG_CHATID, PM_LOGGER_GROUP_ID, catversion
 
 from ..Config import Config
 from ..core.logger import logging
@@ -91,10 +91,16 @@ async def startupmessage():
                 or getattr(Config, "STARTUP_PIC", None)
                 or "https://graph.org/file/4e3ba8e8f7e535d5a2abe.jpg"
             )
+            caption = (
+                f"◈ ─── **A E T H E R I S  U S E R B O T** ─── ◈\n\n"
+                f"⚡ **Status  :** `Online & Operational`\n"
+                f"⏳ **Version :** `v{catversion}`\n"
+                f"◈ ──────────────────────────── ◈"
+            )
             Config.AETHERISLOGO = Config.CATUBLOGO = await catub.tgbot.send_file(
                 BOTLOG_CHATID,
                 pic,
-                caption="◈ ─── **A E T H E R I S  U S E R B O T** ─── ◈\n\n⚡ **Status  :** `Online & Operational`\n⏳ **Version :** `v4.0.0 (Turbo)`\n◈ ──────────────────────────── ◈",
+                caption=caption,
             )
     except Exception as e:
         LOGS.error(e)
