@@ -80,3 +80,27 @@ def test_database_transaction_rollback_on_failure():
 def test_database_connection_check():
     """Verify check_connection returns True for active DB and handles errors."""
     assert check_connection() is True
+
+
+def test_uncached_database_failure_is_not_cached_as_missing():
+    from userbot.sql_helper import globals as storage
+    key = "audit_uncached_failure"
+    storage.invalidate_cache(key)
+    with patch.object(storage.SESSION, "query", side_effect=OperationalError("offline", {}, None)):
+        with pytest.raises(OperationalError):
+            storage.gvarstatus(key)
+    assert key not in storage._CACHE
+
+
+def test_failed_delete_propagates_and_preserves_value():
+    from userbot.sql_helper import globals as storage
+    key = "audit_failed_delete"
+    storage.addgvar(key, "retained")
+    try:
+        with patch.object(storage.SESSION, "commit", side_effect=OperationalError("offline", {}, None)):
+            with pytest.raises(OperationalError):
+                storage.delgvar(key)
+        storage.invalidate_cache(key)
+        assert storage.gvarstatus(key) == "retained"
+    finally:
+        storage.delgvar(key)

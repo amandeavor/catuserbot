@@ -7,7 +7,6 @@
 # Please see: https://github.com/TgCatUB/catuserbot/blob/master/LICENSE
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-import contextlib
 import importlib
 import sys
 from pathlib import Path
@@ -15,7 +14,9 @@ from pathlib import Path
 from userbot import CMD_HELP, LOAD_PLUG
 
 from ..Config import Config
-from ..core import LOADED_CMDS, PLG_INFO
+from ..core import BOT_INFO, CMD_INFO, GRP_INFO, LOADED_CMDS, PLG_INFO
+from ..core.plugins.legacy_reload import RegistrationTransaction
+from ..core.plugins.registry import atomic_registry
 from ..core.logger import logging
 from ..core.managers import edit_delete, edit_or_reply
 from ..core.session import catub
@@ -26,6 +27,29 @@ LOGS = logging.getLogger("CatUserbot")
 
 
 def load_module(shortname, plugin_path=None):
+    """Replace registrations only if the trusted module imports successfully."""
+    if not shortname.isidentifier():
+        raise ValueError("Plugin name must be a Python identifier")
+    module_key = f"userbot.plugins.{shortname}"
+    previous = sys.modules.get(module_key)
+    with RegistrationTransaction(
+        [catub, getattr(catub, "tgbot", None)],
+        [LOADED_CMDS, PLG_INFO, CMD_INFO, GRP_INFO, CMD_HELP, LOAD_PLUG,
+         atomic_registry._handlers, atomic_registry._command_map],
+        [BOT_INFO],
+    ):
+        try:
+            remove_plugin(shortname)
+            return _load_module(shortname, plugin_path)
+        except BaseException:
+            if previous is None:
+                sys.modules.pop(module_key, None)
+            else:
+                sys.modules[module_key] = previous
+            raise
+
+
+def _load_module(shortname, plugin_path=None):
     if shortname.startswith("__"):
         pass
     elif shortname.endswith("_"):
@@ -56,7 +80,10 @@ def load_module(shortname, plugin_path=None):
         mod.tgbot = catub.tgbot
         mod.logger = logging.getLogger(shortname)
         mod.borg = catub
-        spec.loader.exec_module(mod)
+        sys.modules[f"userbot.plugins.{shortname}"] = mod
+        # Reload must see the current bytes even for same-size edits made within
+        # one filesystem timestamp tick (timestamp-based pyc validation cannot).
+        exec(compile(path.read_bytes(), str(path), "exec"), mod.__dict__)
         # for imports
         sys.modules[f"userbot.plugins.{shortname}"] = mod
         LOGS.info(f"Successfully imported {shortname}")
@@ -68,37 +95,51 @@ def load_module_sortner(shortname):
     name = f"userbot.plugins.{shortname}"
     spec = importlib.util.spec_from_file_location(name, path)
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+    sys.modules[name] = mod
+    exec(compile(path.read_bytes(), str(path), "exec"), mod.__dict__)
     LOGS.info(f"Successfully imported {shortname}")
 
 
 def remove_plugin(shortname):
-    try:
-        cmd = []
-        if shortname in PLG_INFO:
-            cmd += PLG_INFO[shortname]
+    module = sys.modules.get(f"userbot.plugins.{shortname}")
+    names = {f"userbot.plugins.{shortname}"}
+    if module is not None:
+        names.add(module.__name__)
+
+    def owned(callback):
+        return getattr(callback, "__module__", None) in names
+
+    for client in (catub, getattr(catub, "tgbot", None)):
+        if client is not None:
+            for callback, builder in list(client.list_event_handlers()):
+                if owned(callback):
+                    client.remove_event_handler(callback, builder)
+    for key, callbacks in list(LOADED_CMDS.items()):
+        remaining = [cb for cb in callbacks if not owned(cb)]
+        if remaining:
+            LOADED_CMDS[key] = remaining
         else:
-            cmd = [shortname]
-        for cmdname in cmd:
-            if cmdname in LOADED_CMDS:
-                for i in LOADED_CMDS[cmdname]:
-                    catub.remove_event_handler(i)
-                del LOADED_CMDS[cmdname]
-        return True
-    except Exception as e:
-        LOGS.error(e)
-    with contextlib.suppress(BaseException):
-        for i in LOAD_PLUG[shortname]:
-            catub.remove_event_handler(i)
-        del LOAD_PLUG[shortname]
-    try:
-        name = f"userbot.plugins.{shortname}"
-        for i in reversed(range(len(catub._event_builders))):
-            ev, cb = catub._event_builders[i]
-            if cb.__module__ == name:
-                del catub._event_builders[i]
-    except BaseException as exc:
-        raise ValueError from exc
+            del LOADED_CMDS[key]
+    commands = PLG_INFO.pop(shortname, [])
+    for command in commands:
+        if not any(command in cmds for cmds in PLG_INFO.values()):
+            CMD_INFO.pop(command, None)
+    for group, plugins in list(GRP_INFO.items()):
+        GRP_INFO[group] = [p for p in plugins if p != shortname]
+        if not GRP_INFO[group]:
+            del GRP_INFO[group]
+            if group in BOT_INFO:
+                BOT_INFO.remove(group)
+    LOAD_PLUG.pop(shortname, None)
+    CMD_HELP.pop(shortname, None)
+    removed = {key for key, handler in atomic_registry._handlers.items()
+               if getattr(handler, "plugin_name", None) == shortname}
+    for key in removed:
+        del atomic_registry._handlers[key]
+    for command, key in list(atomic_registry._command_map.items()):
+        if key in removed:
+            del atomic_registry._command_map[command]
+    return True
 
 
 def checkplugins(filename):

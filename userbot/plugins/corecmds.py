@@ -85,8 +85,6 @@ async def load(event):
     "To load a plugin again. if you have unloaded it"
     shortname = event.pattern_match.group(1)
     try:
-        with contextlib.suppress(BaseException):
-            remove_plugin(shortname)
         load_module(shortname)
         await edit_delete(event, f"`Successfully loaded {shortname}`", 10)
     except Exception as e:
@@ -110,8 +108,6 @@ async def reload_cmd(event):
     if shortname:
         catevent = await edit_or_reply(event, f"◈ `Reloading {shortname}...`")
         try:
-            with contextlib.suppress(BaseException):
-                remove_plugin(shortname)
             load_module(shortname)
             await edit_delete(catevent, f"◈ **Successfully reloaded:** `{shortname}`", 5)
         except Exception as e:
@@ -122,8 +118,6 @@ async def reload_cmd(event):
         failed = []
         for plg in list(PLG_INFO.keys()):
             try:
-                with contextlib.suppress(BaseException):
-                    remove_plugin(plg)
                 load_module(plg)
                 success += 1
             except Exception:

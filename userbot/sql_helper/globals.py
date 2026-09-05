@@ -23,10 +23,7 @@ class Globals(BASE):
         self.value = value
 
 
-try:
-    Globals.__table__.create(bind=ENGINE, checkfirst=True)
-except Exception:
-    pass
+Globals.__table__.create(bind=ENGINE, checkfirst=True)
 
 # Thread-safe in-memory cache to eliminate event loop blocking on high-frequency reads
 _CACHE: Dict[str, Tuple[Optional[str], float]] = {}
@@ -56,7 +53,8 @@ def gvarstatus(variable: str) -> Optional[str]:
         if row:
             val = row.value
     except Exception:
-        val = None
+        SESSION.rollback()
+        raise
     finally:
         SESSION.close()
 
@@ -102,6 +100,7 @@ def delgvar(variable: str) -> bool:
         deleted = bool(rem)
     except Exception:
         SESSION.rollback()
+        raise
     finally:
         SESSION.close()
 

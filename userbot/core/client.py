@@ -14,6 +14,7 @@ import inspect
 import re
 import sys
 import traceback
+from functools import wraps
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -130,6 +131,7 @@ class CatUserBotClient(TelegramClient):
                 REGEX_.regex2 = re.compile(reg2 + pattern)
 
         def decorator(func):  # sourcery no-metrics
+            @wraps(func)
             async def wrapper(check):  # sourcery no-metrics
                 # sourcery skip: low-code-quality
                 try:
@@ -226,7 +228,7 @@ class CatUserBotClient(TelegramClient):
 
             from .session import catub
 
-            if func.__doc__ is not None:
+            if func.__doc__ is not None and command is not None:
                 CMD_INFO[command[0]].append((func.__doc__).strip())
             if pattern is not None:
                 if command is not None:
@@ -321,6 +323,7 @@ class CatUserBotClient(TelegramClient):
         kwargs.setdefault("forwards", forword)
 
         def decorator(func):
+            @wraps(func)
             async def wrapper(check):
                 try:
                     await func(check)
@@ -349,9 +352,9 @@ class CatUserBotClient(TelegramClient):
             from .session import catub
 
             if edited:
-                catub.tgbot.add_event_handler(func, events.MessageEdited(**kwargs))
+                catub.tgbot.add_event_handler(wrapper, events.MessageEdited(**kwargs))
             else:
-                catub.tgbot.add_event_handler(func, events.NewMessage(**kwargs))
+                catub.tgbot.add_event_handler(wrapper, events.NewMessage(**kwargs))
 
             return wrapper
 
