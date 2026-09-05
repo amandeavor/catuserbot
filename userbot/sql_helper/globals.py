@@ -72,8 +72,8 @@ def addgvar(variable: str, value: Any) -> None:
     val_str = str(value) if value is not None else ""
 
     try:
-        if SESSION.query(Globals).filter(Globals.variable == var_str).one_or_none():
-            delgvar(var_str)
+        # Delete and replace in ONE transaction. A failed insert must preserve the old value.
+        SESSION.query(Globals).filter(Globals.variable == var_str).delete(synchronize_session="fetch")
         adder = Globals(var_str, val_str)
         SESSION.add(adder)
         SESSION.commit()

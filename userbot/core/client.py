@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 from userbot.core.ai import ai_router
-from userbot.core.flood_shield import flood_shield
+from userbot.core.flood_shield import flood_shield, is_maintenance_request
 from userbot.core.jobs.supervisor import job_supervisor
 from userbot.core.media.service import media_service
 from userbot.core.observability import metrics, tracer
@@ -40,7 +40,6 @@ from telethon.errors import (
 from ..Config import Config
 from ..helpers.utils.events import checking
 from ..helpers.utils.flags import parse_arguments
-from ..helpers.utils.format import paste_message
 from ..helpers.utils.utils import runcmd
 from ..sql_helper.globals import gvarstatus
 from . import BOT_INFO, CMD_INFO, GRP_INFO, LOADED_CMDS, PLG_INFO
@@ -209,7 +208,9 @@ class CatUserBotClient(TelegramClient):
                     )
                     await check.delete()
                     await flood_shield.enforce_rate_limit(e.seconds)
-                except BaseException as e:
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
                     lat_ms = (time.perf_counter() - t_start) * 1000.0
                     metrics.record_command(cmd_tag, lat_ms, success=False)
                     tracer.finish_span(span, status="ERROR", error=str(e))
@@ -217,43 +218,10 @@ class CatUserBotClient(TelegramClient):
                     if not disable_errors:
                         if Config.PRIVATE_GROUP_BOT_API_ID == 0:
                             return
-                        date = (datetime.datetime.now()).strftime("%m/%d/%Y, %H:%M:%S")
-                        ftext = f"\nDisclaimer:\nThis file is pasted only here ONLY here,\
-                                  \nwe logged only fact of error and date,\nwe respect your privacy,\
-                                  \nyou may not report this error if you've\
-                                  \nany confidential data here, no one will see your data\
-                                  \n\n--------BEGIN USERBOT TRACEBACK LOG--------\
-                                  \nDate: {date}\nGroup ID: {str(check.chat_id)}\
-                                  \nSender ID: {str(check.sender_id)}\
-                                  \nMessage Link: {await check.client.get_msg_link(check)}\
-                                  \n\nEvent Trigger:\n{str(check.text)}\
-                                  \n\nTraceback info:\n{str(traceback.format_exc())}\
-                                  \n\nError text:\n{str(sys.exc_info()[1])}"
-                        new = {
-                            "error": str(sys.exc_info()[1]),
-                            "date": datetime.datetime.now(),
-                        }
-                        ftext += "\n\n--------END USERBOT TRACEBACK LOG--------"
-                        ftext += "\n\n\nLast 5 commits:\n"
-                        command = 'git log --pretty=format:"%an: %s" -5'
-                        output = (await runcmd(command))[:2]
-                        result = output[0] + output[1]
-                        ftext += result
-                        pastelink = await paste_message(
-                            ftext, pastetype="s", markdown=False
-                        )
-                        link = "[here](https://t.me/catuserbot_support)"
-                        text = (
-                            "**CatUserbot Error report**\n\n"
-                            + "If you wanna you can report it"
-                        )
-                        text += f"- just forward this message {link}.\n"
-                        text += (
-                            "Nothing is logged except the fact of error and date\n\n"
-                        )
-                        text += f"**Error report : ** [{new['error']}]({pastelink})"
                         await check.client.send_message(
-                            Config.PRIVATE_GROUP_BOT_API_ID, text, link_preview=False
+                            Config.PRIVATE_GROUP_BOT_API_ID,
+                            "Aetheris command failed. Check the local application logs.",
+                            link_preview=False,
                         )
 
             from .session import catub
@@ -364,49 +332,18 @@ class CatUserBotClient(TelegramClient):
                     LOGS.error("Message was same as previous message")
                 except MessageIdInvalidError:
                     LOGS.error("Message was deleted or cant be found")
-                except BaseException as e:
+                except asyncio.CancelledError:
+                    raise
+                except Exception as e:
                     # Check if we have to disable error logging.
                     LOGS.exception(e)  # Log the error in console
                     if not disable_errors:
                         if Config.PRIVATE_GROUP_BOT_API_ID == 0:
                             return
-                        date = (datetime.datetime.now()).strftime("%m/%d/%Y, %H:%M:%S")
-                        ftext = f"\nDisclaimer:\nThis file is pasted only here ONLY here,\
-                                    \nwe logged only fact of error and date,\nwe respect your privacy,\
-                                    \nyou may not report this error if you've\
-                                    \nany confidential data here, no one will see your data\
-                                    \n\n--------BEGIN USERBOT TRACEBACK LOG--------\
-                                    \nDate: {date}\nGroup ID: {str(check.chat_id)}\
-                                    \nSender ID: {str(check.sender_id)}\
-                                    \nMessage Link: {await check.client.get_msg_link(check)}\
-                                    \n\nEvent Trigger:\n{str(check.text)}\
-                                    \n\nTraceback info:\n{str(traceback.format_exc())}\
-                                    \n\nError text:\n{str(sys.exc_info()[1])}"
-                        new = {
-                            "error": str(sys.exc_info()[1]),
-                            "date": datetime.datetime.now(),
-                        }
-                        ftext += "\n\n--------END USERBOT TRACEBACK LOG--------"
-                        command = 'git log --pretty=format:"%an: %s" -5'
-                        ftext += "\n\n\nLast 5 commits:\n"
-                        output = (await runcmd(command))[:2]
-                        result = output[0] + output[1]
-                        ftext += result
-                        pastelink = await paste_message(
-                            ftext, pastetype="s", markdown=False
-                        )
-                        link = "[here](https://t.me/catuserbot_support)"
-                        text = (
-                            "**CatUserbot Error report**\n\n"
-                            + "If you wanna you can report it"
-                        )
-                        text += f"- just forward this message {link}.\n"
-                        text += (
-                            "Nothing is logged except the fact of error and date\n\n"
-                        )
-                        text += f"**Error report : ** [{new['error']}]({pastelink})"
                         await check.client.send_message(
-                            Config.PRIVATE_GROUP_BOT_API_ID, text, link_preview=False
+                            Config.PRIVATE_GROUP_BOT_API_ID,
+                            "Aetheris command failed. Check the local application logs.",
+                            link_preview=False,
                         )
 
             from .session import catub
@@ -420,61 +357,19 @@ class CatUserBotClient(TelegramClient):
 
         return decorator
 
-MAINTENANCE_RPC_NAMES = {
-    "PingRequest",
-    "PingDelayDisconnectRequest",
-    "GetStateRequest",
-    "InitConnectionRequest",
-    "InvokeWithLayerRequest",
-    "DestroySessionRequest",
-    "GetDifferenceRequest",
-    "GetConfigRequest",
-    "GetNearestDcRequest",
-    "GetFutureSaltsRequest",
-    "MsgsAck",
-    "HttpWait",
-}
-
-MAINTENANCE_RPC_PREFIXES = (
-    "Ping",
-    "GetState",
-    "InitConnection",
-    "InvokeWithLayer",
-    "DestroySession",
-    "GetDifference",
-    "GetConfig",
-    "GetNearestDc",
-    "GetFutureSalts",
-    "MsgsAck",
-    "HttpWait",
-)
-
-
-def is_maintenance_request(request: Any) -> bool:
-    """
-    Returns True if request is an MTProto maintenance/heartbeat RPC that must bypass
-    rate limiting, deduplication, and circuit breaking.
-    """
-    if request is None:
-        return False
-    req_type = type(request).__name__
-    if req_type in MAINTENANCE_RPC_NAMES:
-        return True
-    return any(req_type.startswith(prefix) for prefix in MAINTENANCE_RPC_PREFIXES)
-
 
     async def get_traceback(self, exc: Exception) -> str:
         return "".join(
-            traceback.format_exception(etype=type(exc), value=exc, tb=exc.__traceback__)
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
         )
 
-    async def __call__(self, request, ordered=False):
+    async def __call__(self, request, ordered=False, flood_sleep_threshold=None):
         """
         Intercept all outbound MTProto RPC requests at the lowest common boundary.
         Categorizes requests into priority lanes and enforces FloodShieldV5 protection.
         """
         if is_maintenance_request(request):
-            return await super().__call__(request, ordered=ordered)
+            return await super().__call__(request, ordered=ordered, flood_sleep_threshold=flood_sleep_threshold)
 
         req_type = type(request).__name__
         from userbot.core.flood_shield import RPCLane
@@ -489,6 +384,8 @@ def is_maintenance_request(request: Any) -> bool:
             super().__call__,
             request,
             ordered=ordered,
+            flood_sleep_threshold=flood_sleep_threshold,
+            max_retries=0 if isinstance(request, (list, tuple)) else 3,
             lane=lane,
             cb_key=f"rpc_{req_type}",
         )

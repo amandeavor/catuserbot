@@ -33,7 +33,13 @@ from typing import Any, Dict, Tuple
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(ROOT_DIR))
 
-from scripts.artifact_utils import get_git_commit, get_standard_metadata
+from scripts.artifact_utils import get_git_commit, get_standard_metadata, is_git_tree_clean, validate_artifact
+
+
+def require_evidence(data):
+    valid, reason = validate_artifact(data)
+    if not valid:
+        fail(reason)
 
 
 def step(msg: str):
@@ -78,7 +84,9 @@ def check_hygiene():
         capture_output=True,
         text=True,
     )
-    tracked_files = res.stdout.splitlines() if res.returncode == 0 else []
+    if res.returncode != 0:
+        fail("Cannot inspect the Git index")
+    tracked_files = res.stdout.splitlines()
     forbidden_extensions = (".session", ".session-journal", ".db", ".sqlite", ".sqlite3", ".env")
     tracked_violations = [
         f for f in tracked_files if any(f.endswith(ext) or f == ".env" for ext in forbidden_extensions)
@@ -99,6 +107,10 @@ def check_plugin_validation_artifact():
     with open(artifact_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
+    require_evidence(data)
+    if data.get("evidence_level") != "INTEGRATION TESTED":
+        fail("Mock-only plugin imports do not qualify runtime behavior")
+
     total = data.get("total_plugins", 0)
     passed = data.get("passed", 0)
     rate = data.get("pass_rate", 0.0)
@@ -116,6 +128,8 @@ def check_command_reconciliation():
 
     with open(artifact_path, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    require_evidence(data)
 
     metrics = data.get("summary_metrics", {})
     total_handlers = metrics.get("total_registered_handlers", 0)
@@ -148,6 +162,8 @@ def check_soak_telemetry():
         fail("soak_metrics.jsonl does not exist. Run scripts/soak_test.py first.")
 
     lines = [json.loads(line) for line in open(artifact_path, "r", encoding="utf-8") if line.strip()]
+    for sample in lines:
+        require_evidence(sample)
     if len(lines) < 10:
         fail(f"Insufficient telemetry samples: {len(lines)}")
 
@@ -172,7 +188,7 @@ def run_unit_and_integration_tests():
     )
     if res.returncode != 0:
         fail("pytest suite failed!")
-    pass_msg("All automated unit and integration tests passed (59/59, 0 failures)")
+    pass_msg("pytest completed successfully; see its measured test counts")
 
 
 def check_database_preservation() -> bool:
@@ -183,6 +199,8 @@ def check_database_preservation() -> bool:
 
     with open(db_art, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    require_evidence(data)
 
     if data.get("gate_passed") is not True or data.get("status") != "PASS":
         fail(f"Database preservation check failed: {data.get('error')}")
@@ -213,12 +231,9 @@ def evaluate_live_acceptance_gates(curr_head: str) -> tuple[bool, Dict[str, str]
             return False
         try:
             d = json.load(open(path, "r", encoding="utf-8"))
-            art_commit = d.get("git_commit")
-            # Must match current commit HEAD
-            if art_commit and art_commit == curr_head:
-                if d.get("result") == "PASS" or d.get("status") == "PASS" or d.get("gate_passed") is True:
-                    results[key] = "PASS"
-                    return True
+            if validate_artifact(d, curr_head)[0]:
+                results[key] = "PASS"
+                return True
             return False
         except Exception:
             return False
@@ -243,16 +258,20 @@ def generate_manifest(curr_head: str, all_live_passed: bool, live_results: Dict[
     step("9. Generating Final Acceptance Manifest (artifacts/final_acceptance_manifest.json)")
     manifest_path = ROOT_DIR / "artifacts" / "final_acceptance_manifest.json"
 
-    qualification_level = "LEVEL_2_LIVE_QUALIFIED" if all_live_passed else "LEVEL_1_AUTOMATED_QUALIFIED"
+    # Filename hygiene is not content-level secret scanning. Do not qualify a release
+    # while that required evidence is absent, even if other artifacts claim PASS.
+    qualification_level = "INCOMPLETE"
 
     manifest_data = {
+        **get_standard_metadata("release_gate"),
         "git_commit": curr_head,
         "version": "5.0.0-rc2",
         "qualification_level": qualification_level,
         "automated_tests": "PASS",
         "plugin_runtime": "PASS",
         "command_registry": "PASS",
-        "secret_scan": "PASS",
+        "secret_scan": "NOT_VERIFIED",
+        "tracked_file_hygiene": "PASS",
         "database_preservation": "PASS",
         "session_preservation": live_results["session_preservation"],
         "basic_mtproto": live_results["basic_mtproto"],
@@ -275,6 +294,8 @@ def main():
     print("=" * 80)
 
     curr_head = get_git_commit()
+    if not is_git_tree_clean():
+        fail("Release evidence requires a clean working tree")
     print(f"Git HEAD: {curr_head}")
 
     check_syntax()
@@ -288,21 +309,10 @@ def main():
     generate_manifest(curr_head, all_live_passed, live_results)
 
     print("\n" + "=" * 80)
-    if all_live_passed:
-        print("LEVEL 2: LIVE QUALIFIED (5.0.0-rc2)")
-        print("ALL AUTOMATED RELEASE GATES PASSED")
-        print("LIVE ACCEPTANCE EVIDENCE PASSED")
-        print("STATUS: 5.0.0-rc2 (RELEASE CANDIDATE)")
-        print("OPERATOR VALIDATION REQUIRED — STABLE PROMOTION REQUIRES OPERATOR APPROVAL")
-    else:
-        print("LEVEL 1: AUTOMATED QUALIFIED (5.0.0-rc2)")
-        print("ALL AUTOMATED ENGINEERING GATES PASSED (59/59 TESTS, 138 PLUGINS)")
-        print("LIVE TELEGRAM TESTS: PENDING OPERATOR CREDENTIALS")
-        print("STATUS: 5.0.0-rc2 (RELEASE CANDIDATE)")
-        print("OPERATOR REAL-WORLD TESTING: PENDING")
+    print("QUALIFICATION INCOMPLETE: required content-level secret scan is not implemented.")
+    print("Aetheris remains 5.0.0-rc2. See manifest for individual results.")
     print("=" * 80)
-
-    sys.exit(0)
+    sys.exit(1)
 
 
 if __name__ == "__main__":

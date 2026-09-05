@@ -1,3 +1,4 @@
+from ..core.safe_archive import extract_tar_safely
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~# CatUserBot #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 # Copyright (C) 2020-2023 by TgCatUB@Github.
 
@@ -168,7 +169,7 @@ async def zip_file(event):  # sourcery no-metrics
         mone = await edit_or_reply(event, "`Unpacking....`")
         for attr in getattr(reply.document, "attributes", []):
             if isinstance(attr, types.DocumentAttributeFilename):
-                filename = attr.file_name
+                filename = os.path.basename(attr.file_name.replace("\\", "/"))
         filename = os.path.join(Config.TMP_DOWNLOAD_DIRECTORY, filename)
         c_time = time.time()
         try:
@@ -234,7 +235,7 @@ async def untar_file(event):  # sourcery no-metrics
                 os.mkdir(destination)
             file = tar_open(path)
             # extracting file
-            file.extractall(destination)
+            extract_tar_safely(file, destination)
             file.close()
             end = datetime.now()
             ms = (end - start).seconds
@@ -250,7 +251,7 @@ async def untar_file(event):  # sourcery no-metrics
         mone = await edit_or_reply(event, "`Unpacking....`")
         for attr in getattr(reply.document, "attributes", []):
             if isinstance(attr, types.DocumentAttributeFilename):
-                filename = attr.file_name
+                filename = os.path.basename(attr.file_name.replace("\\", "/"))
         filename = os.path.join(Config.TMP_DOWNLOAD_DIRECTORY, filename)
         c_time = time.time()
         try:
@@ -278,7 +279,7 @@ async def untar_file(event):  # sourcery no-metrics
             os.mkdir(destination)
         file = tar_open(filename)
         # extracting file
-        file.extractall(destination)
+        extract_tar_safely(file, destination)
         file.close()
         end = datetime.now()
         ms = (end - start).seconds

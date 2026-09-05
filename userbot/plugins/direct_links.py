@@ -10,7 +10,9 @@
 import json
 import re
 import urllib.parse
-from os import popen
+import subprocess
+
+from ..core.safe_expression import evaluate_link_expression
 from random import choice
 
 import requests
@@ -152,9 +154,9 @@ def zippy_share(url: str) -> str:
                 "math"
             ]
 
-            dl_url = url_raw.replace(math, f'"{str(eval(math))}"')
+            dl_url = url_raw.replace(math, f'"{str(evaluate_link_expression(math))}"')
             break
-    dl_url = base_url + eval(dl_url)
+    dl_url = base_url + evaluate_link_expression(dl_url)
     name = urllib.parse.unquote(dl_url.split("/")[-1])
     reply += f"[{name}]({dl_url})\n"
     return reply
@@ -187,8 +189,7 @@ def mega_dl(url: str) -> str:
         link = re.findall(r"\bhttps?://.*mega.*\.nz\S+", url)[0]
     except IndexError:
         return "`No MEGA.nz links found`\n"
-    command = f"bin/megadown -q -m {link}"
-    result = popen(command).read()
+    result = subprocess.run(["bin/megadown", "-q", "-m", link], capture_output=True, text=True, timeout=60, check=True).stdout
     try:
         data = json.loads(result)
         LOGS.info(data)
@@ -210,8 +211,7 @@ def cm_ru(url: str) -> str:
         link = re.findall(r"\bhttps?://.*cloud\.mail\.ru\S+", url)[0]
     except IndexError:
         return "`No cloud.mail.ru links found`\n"
-    command = f"bin/cmrudl -s {link}"
-    result = popen(command).read()
+    result = subprocess.run(["bin/cmrudl", "-s", link], capture_output=True, text=True, timeout=60, check=True).stdout
     result = result.splitlines()[-1]
     try:
         data = json.loads(result)

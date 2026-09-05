@@ -7,6 +7,7 @@ and timestamp, ensuring strict integrity and preventing artifact reuse across co
 
 import os
 import platform
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -44,7 +45,7 @@ def get_git_branch() -> str:
         )
         return res.stdout.strip()
     except Exception:
-        return "aetheris-v5"
+        return "UNKNOWN_BRANCH"
 
 
 def is_git_tree_clean() -> bool:
@@ -76,6 +77,7 @@ def get_standard_metadata(test_name: str, result: str = "PASS") -> Dict[str, Any
         "platform": platform.platform(),
         "python_version": platform.python_version(),
         "result": result,
+        "git_tree_clean": is_git_tree_clean(),
     }
 
 
@@ -94,9 +96,16 @@ def validate_artifact(
     art_commit = artifact_data.get("git_commit")
     curr_commit = expected_commit or get_git_commit()
 
+    if not isinstance(curr_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", curr_commit):
+        return False, "Current commit is not a verified Git SHA"
+    if not isinstance(art_commit, str) or not re.fullmatch(r"[0-9a-f]{40}", art_commit):
+        return False, "Artifact commit is not a verified Git SHA"
+
     if not art_commit or art_commit != curr_commit:
         return False, f"Artifact commit mismatch: artifact was produced at {art_commit[:8] if art_commit else 'NONE'}, but current HEAD is {curr_commit[:8]}"
 
+    if artifact_data.get("git_tree_clean") is not True:
+        return False, "Artifact was not produced from a verified clean tree"
     res = artifact_data.get("result", artifact_data.get("status", ""))
     invalid_states = {"SKIPPED", "SKIPPED_CREDENTIALS_ABSENT", "NOT_RUN", "PARTIAL", "FAILED", "ERROR"}
 
@@ -105,7 +114,11 @@ def validate_artifact(
             return True, "Artifact is in skipped state (permissible in pre-live evaluation)"
         return False, f"Artifact result is not PASS (found: '{res}')"
 
-    if res != "PASS" and artifact_data.get("gate_passed") is not True:
+    if res != "PASS":
         return False, f"Artifact result is not verified PASS (found: '{res}')"
+    if "status" in artifact_data and artifact_data["status"] != "PASS":
+        return False, "Artifact has conflicting status"
+    if "gate_passed" in artifact_data and artifact_data["gate_passed"] is not True:
+        return False, "Artifact has conflicting gate result"
 
     return True, "Artifact validated successfully"

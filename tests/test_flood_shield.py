@@ -111,18 +111,10 @@ def test_is_maintenance_request_classification():
     from userbot.core.flood_shield import is_maintenance_request
 
     maintenance_classes = [
-        "PingRequest",
-        "PingDelayDisconnectRequest",
         "GetStateRequest",
-        "InitConnectionRequest",
-        "InvokeWithLayerRequest",
-        "DestroySessionRequest",
         "GetDifferenceRequest",
+        "GetChannelDifferenceRequest",
         "GetConfigRequest",
-        "GetNearestDcRequest",
-        "GetFutureSaltsRequest",
-        "MsgsAck",
-        "HttpWait",
     ]
 
     for cls_name in maintenance_classes:
@@ -130,6 +122,18 @@ def test_is_maintenance_request_classification():
         assert is_maintenance_request(mock_rpc) is True, f"Failed to classify {cls_name} as maintenance"
 
     non_maintenance = [
+        # In the pinned audit fork these service messages travel through sender.send,
+        # below __call__. Explicit high-level uses must not receive blanket exemptions.
+        "PingRequest",
+        "PingDelayDisconnectRequest",
+        "InitConnectionRequest",
+        "InvokeWithLayerRequest",
+        "DestroySessionRequest",
+        "GetNearestDcRequest",
+        "GetFutureSaltsRequest",
+        "MsgsAck",
+        "HttpWait",
+        "GetStateOfUnrelatedPluginRequest",
         "SendMessageRequest",
         "EditMessageRequest",
         "DeleteMessagesRequest",
