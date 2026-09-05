@@ -58,6 +58,10 @@ async def setup_bot():
                 catub.session.set_dc(option.id, option.ip_address, option.port)
                 catub.session.save()
                 break
+        if Config.TG_BOT_TOKEN:
+            await catub.tgbot.start(bot_token=Config.TG_BOT_TOKEN)
+        else:
+            await catub.tgbot.connect()
         bot_details = await catub.tgbot.get_me()
         if bot_details:
             Config.TG_BOT_USERNAME = f"@{bot_details.username}"
@@ -68,6 +72,8 @@ async def setup_bot():
                 "Please run 'python stringsetup.py' to generate your session string and set STRING_SESSION."
             )
             sys.exit(1)
+        if Config.OWNER_ID and Config.OWNER_ID != utils.get_peer_id(catub.me):
+            raise RuntimeError("Connected Telegram account does not match OWNER_ID")
         catub.uid = catub.tgbot.uid = utils.get_peer_id(catub.me)
         if Config.OWNER_ID == 0:
             Config.OWNER_ID = utils.get_peer_id(catub.me)

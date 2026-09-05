@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent.parent.resolve()
 sys.path.insert(0, str(ROOT_DIR))
 
-from scripts.artifact_utils import get_git_commit, is_git_tree_clean
+from scripts.artifact_utils import get_git_commit, is_git_tree_clean, validate_artifact
 
 logging.basicConfig(
     level=logging.INFO,
@@ -68,6 +68,11 @@ def main():
 
     with open(manifest_file, "r", encoding="utf-8") as f:
         manifest = json.load(f)
+
+    valid, reason = validate_artifact(manifest, curr_head)
+    if not valid:
+        LOGS.critical("PROMOTION_BLOCKED: %s", reason)
+        sys.exit(1)
 
     if manifest.get("git_commit") != curr_head:
         LOGS.critical(

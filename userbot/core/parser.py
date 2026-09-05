@@ -68,7 +68,7 @@ class CommandLexer:
                 continue
 
             # Whitespace
-            if char in " \t\r":
+            if char in " \t\r\n":
                 self.pos += 1
                 continue
 

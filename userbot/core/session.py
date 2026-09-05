@@ -20,19 +20,20 @@ __version__ = "3.3.0"
 loop = None
 
 raw_session = Config.STRING_SESSION
-if raw_session and len(str(raw_session).strip()) > 50:
+if raw_session:
     try:
         session = StringSession(str(raw_session).strip())
-    except Exception as err:
-        print(f"Warning: Could not parse STRING_SESSION ({err}). Falling back to 'catuserbot'.")
-        session = "catuserbot"
+        if session.auth_key is None:
+            raise ValueError("No authorization key")
+    except Exception:
+        raise ValueError("Invalid STRING_SESSION; refusing to select another session store.") from None
 else:
-    if raw_session:
-        print(f"Warning: STRING_SESSION '{raw_session}' is invalid (too short or placeholder). Falling back to 'catuserbot'.")
     session = "catuserbot"
 
-api_id = Config.APP_ID or 6
-api_hash = Config.API_HASH or "0123456789abcdef0123456789abcdef"
+api_id = Config.APP_ID
+api_hash = Config.API_HASH
+if not api_id or not api_hash:
+    raise ValueError("APP_ID and API_HASH are required; no substitute credentials will be used.")
 
 try:
     catub = CatUserBotClient(
@@ -45,15 +46,8 @@ try:
         auto_reconnect=True,
         connection_retries=None,
     )
-except Exception as e:
-    print(f"Notice: Initializing fallback client ({e})")
-    catub = CatUserBotClient(
-        session=None,
-        api_id=6,
-        api_hash="0123456789abcdef0123456789abcdef",
-        loop=loop,
-        app_version=__version__,
-    )
+except Exception:
+    raise RuntimeError("Cannot open the configured user session; existing authorization was not replaced.") from None
 
 try:
     tgbot_client = CatUserBotClient(
@@ -67,18 +61,6 @@ try:
         connection_retries=None,
     )
 except Exception:
-    tgbot_client = CatUserBotClient(
-        session=None,
-        api_id=6,
-        api_hash="0123456789abcdef0123456789abcdef",
-        loop=loop,
-        app_version=__version__,
-    )
-
-if Config.TG_BOT_TOKEN:
-    try:
-        tgbot_client.start(bot_token=Config.TG_BOT_TOKEN)
-    except Exception as e:
-        print(f"Warning: Unable to start tgbot: {e}")
+    raise RuntimeError("Cannot open the assistant session; existing authorization was not replaced.") from None
 
 catub.tgbot = tgbot = tgbot_client

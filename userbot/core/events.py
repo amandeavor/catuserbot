@@ -8,6 +8,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 import pathlib
+import inspect
 import typing
 
 from telethon import events, hints, types
@@ -31,8 +32,10 @@ class NewMessage(events.NewMessage):
         self.require_admin = require_admin
         self.inline = inline
 
-    def filter(self, event):
+    async def filter(self, event):
         _event = super().filter(event)
+        if inspect.isawaitable(_event):
+            _event = await _event
         if not _event:
             return
 
@@ -42,40 +45,16 @@ class NewMessage(events.NewMessage):
             return
 
         if self.require_admin and not isinstance(event._chat_peer, types.PeerUser):
-            is_creator = False
-            is_admin = False
-            creator = hasattr(event.chat, "creator")
-            admin_rights = hasattr(event.chat, "admin_rights")
-            flag = None
-            if not creator and not admin_rights:
-                try:
-                    event.chat = event._client.loop.create_task(event.get_chat())
-                except AttributeError:
-                    flag = "Null"
-
-            if self.incoming:
-                try:
-                    p = event._client.loop.create_task(
-                        event._client.get_permissions(event.chat_id, event.sender_id)
-                    )
-                    participant = p.participant
-                except Exception:
-                    participant = None
-                if isinstance(participant, types.ChannelParticipantCreator):
-                    is_creator = True
-                if isinstance(participant, types.ChannelParticipantAdmin):
-                    is_admin = True
-            elif flag:
-                is_admin = True
-                is_creator = False
-            else:
-                is_creator = event.chat.creator
-                is_admin = event.chat.admin_rights
-
-            if not is_creator and not is_admin:
+            try:
+                permissions = await event._client.get_permissions(
+                    event.chat_id, event.sender_id if self.incoming else "me"
+                )
+            except Exception:
+                # A failed permission lookup must never grant admin access.
+                return
+            if not (permissions.is_creator or permissions.is_admin):
                 text = "`I need admin rights to be able to use this command!`"
-
-                event._client.loop.create_task(edit_or_reply(event, text))
+                await edit_or_reply(event, text)
                 return
         return event
 

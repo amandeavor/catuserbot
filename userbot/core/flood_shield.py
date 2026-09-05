@@ -25,56 +25,15 @@ class RPCLane(enum.IntEnum):
 
 TrafficPriority = RPCLane
 
+# Verified high-level requests in Jisan09/Telethon 4bcec594.
+# InitConnection/InvokeWithLayer, pings and ACKs use MTProtoSender directly.
 MAINTENANCE_RPC_NAMES = {
-    "PingRequest",
-    "PingDelayDisconnectRequest",
-    "GetStateRequest",
-    "InitConnectionRequest",
-    "InvokeWithLayerRequest",
-    "DestroySessionRequest",
-    "GetDifferenceRequest",
-    "GetConfigRequest",
-    "GetNearestDcRequest",
-    "GetFutureSaltsRequest",
-    "MsgsAck",
-    "HttpWait",
+    "GetStateRequest", "GetDifferenceRequest", "GetChannelDifferenceRequest", "GetConfigRequest",
 }
-
-MAINTENANCE_RPC_PREFIXES = (
-    "Ping",
-    "GetState",
-    "InitConnection",
-    "InvokeWithLayer",
-    "DestroySession",
-    "GetDifference",
-    "GetConfig",
-    "GetNearestDc",
-    "GetFutureSalts",
-    "MsgsAck",
-    "HttpWait",
-)
 
 
 def is_maintenance_request(request: Any) -> bool:
-    """
-    Returns True if request is an MTProto maintenance/session RPC that must bypass
-    rate limiting, deduplication, and circuit breaking.
-
-    Architectural Layer Notes (Telethon 1.x):
-    - Client __call__ boundary: GetState, GetDifference, InitConnection, InvokeWithLayer,
-      GetConfig, and GetNearestDc are processed at this level and exempted here to prevent
-      update sync stalls or unnecessary transport reconnects.
-    - Transport boundary (MTProtoSender): MsgsAck, HttpWait, and internal keepalive pings
-      are handled below __call__; they are included defensively in the event of direct invocation.
-    - Exemption rationale: Delaying these requests degrades connection stability and triggers
-      unnecessary transport reconnects, but does not directly cause account bans.
-    """
-    if request is None:
-        return False
-    req_type = type(request).__name__
-    if req_type in MAINTENANCE_RPC_NAMES:
-        return True
-    return any(req_type.startswith(prefix) for prefix in MAINTENANCE_RPC_PREFIXES)
+    return type(request).__name__ in MAINTENANCE_RPC_NAMES
 
 
 class CircuitState(enum.Enum):
@@ -138,9 +97,8 @@ class TokenBucket:
                 self.tokens -= tokens
                 return 0.0
 
-            needed = tokens - self.tokens
-            wait_time = needed / self.refill_rate
-            return wait_time
+            self.tokens -= tokens  # Reserve this caller's place, including existing debt.
+            return -self.tokens / self.refill_rate
 
 
 def calculate_flood_wait(seconds: float, min_jitter: float = 0.5, max_jitter: float = 2.0) -> float:
@@ -215,6 +173,7 @@ class FloodShieldV5:
         peer_id: Optional[str] = None,
         cb_key: str = "default",
         max_retries: int = 3,
+        retry_transient: bool = False,
         **kwargs: Any,
     ) -> Any:
         """
@@ -251,6 +210,9 @@ class FloodShieldV5:
         backoff = 1.0
 
         while True:
+            if lane != RPCLane.P0_SYSTEM:
+                while time.time() < self._active_flood_until:
+                    await asyncio.sleep(self._active_flood_until - time.time())
             try:
                 result = await coro_fn(*args, **kwargs)
                 if cb:
@@ -289,7 +251,7 @@ class FloodShieldV5:
                     err in exc_type or err in exc_str
                     for err in ["Timeout", "ConnectionReset", "ServerDisconnected", "NetworkError"]
                 )
-                if is_transient and retries < max_retries:
+                if retry_transient and is_transient and retries < max_retries:
                     retries += 1
                     sleep_time = backoff + random.uniform(0.1, 0.5)
                     backoff *= 2.0

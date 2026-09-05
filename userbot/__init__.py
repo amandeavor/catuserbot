@@ -3,7 +3,6 @@
 # Licensed under the GNU Affero General Public License v3.0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-import signal
 import sys
 import time
 
@@ -43,14 +42,6 @@ StartTime = time.time()
 catversion = "5.0.0-rc2"
 aetherisversion = "5.0.0-rc2"
 
-
-def close_connection(*_):
-    print("Closing Aetheris Userbot connection.")
-    runasync(catub.disconnect())
-    sys.exit(143)
-
-
-signal.signal(signal.SIGTERM, close_connection)
 
 UPSTREAM_REPO_URL = Config.UPSTREAM_REPO
 

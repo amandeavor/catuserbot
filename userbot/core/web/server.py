@@ -15,7 +15,6 @@ from urllib.parse import parse_qs, urlparse
 from userbot.core.jobs.supervisor import job_supervisor
 from userbot.core.observability.metrics import metrics
 from userbot.core.observability.tracer import tracer
-from userbot.core.plugins.manager import plugin_manager
 from userbot.core.plugins.registry import atomic_registry
 from userbot.core.web.templates import DASHBOARD_HTML
 
@@ -29,7 +28,7 @@ class DashboardServer:
     Binds strictly to 127.0.0.1 by default with constant-time HMAC bearer token verification.
     """
 
-    def __init__(self, host: str = "127.0.0.1", port: int = 8080, auth_token: Optional[str] = None):
+    def __init__(self, host: str = "127.0.0.1", port: int = 8081, auth_token: Optional[str] = None):
         self.host = host
         self.port = port
         # Never use insecure default credentials; draw from env or generate a secure random token
@@ -37,13 +36,14 @@ class DashboardServer:
         self.auth_token = auth_token or env_token or secrets.token_urlsafe(32)
         self.server: Optional[asyncio.Server] = None
         self._running = False
+        self._connections = set()
 
     async def start(self) -> None:
         if self._running:
             return
         self.server = await asyncio.start_server(self._handle_client, self.host, self.port)
         self._running = True
-        LOG.info(f"Aetheris V5 Web Dashboard active at http://{self.host}:{self.port} (Token: {self.auth_token[:6]}...[PROTECTED])")
+        LOG.info("Aetheris V5 Web Dashboard active at http://%s:%s", self.host, self.port)
 
     async def stop(self) -> None:
         if self.server:
@@ -51,6 +51,10 @@ class DashboardServer:
             await self.server.wait_closed()
             self._running = False
             LOG.info("Aetheris V5 Web Dashboard stopped.")
+        tasks = list(self._connections)
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     def _is_authorized(self, auth_header: str, token_in_query: Optional[str]) -> bool:
         """Constant-time token verification to prevent timing side-channel attacks."""
@@ -71,6 +75,16 @@ class DashboardServer:
         return False
 
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
+        task = asyncio.current_task()
+        self._connections.add(task)
+        try:
+            await asyncio.wait_for(self._serve_client(reader, writer), timeout=10)
+        except TimeoutError:
+            writer.close()
+        finally:
+            self._connections.discard(task)
+
+    async def _serve_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
             line = await reader.readline()
             if not line:
@@ -90,8 +104,13 @@ class DashboardServer:
 
             # Read headers
             headers: Dict[str, str] = {}
+            header_bytes = len(line)
             while True:
                 h_line = await reader.readline()
+                header_bytes += len(h_line)
+                if header_bytes > 16384:
+                    await self._send_response(writer, 413, "application/json", b'{"error":"Headers too large"}')
+                    return
                 if not h_line or h_line == b"\r\n":
                     break
                 decoded_h = h_line.decode("utf-8", errors="ignore").strip()
@@ -140,10 +159,9 @@ class DashboardServer:
                 ]
                 await self._send_response(writer, 200, "application/json", json.dumps(traces_payload).encode("utf-8"))
             elif method == "POST" and path == "/api/plugins/reload":
-                # Trigger async reload safely
-                asyncio.create_task(plugin_manager.reload_all())
+                # The V5 manager does not own production legacy registrations.
                 await self._send_response(
-                    writer, 200, "application/json", json.dumps({"message": "Plugin reload initiated"}).encode("utf-8")
+                    writer, 501, "application/json", json.dumps({"error": "Use the owner reload command; dashboard reload is not implemented"}).encode("utf-8")
                 )
             else:
                 await self._send_response(writer, 404, "application/json", json.dumps({"error": "Not Found"}).encode())
@@ -184,7 +202,7 @@ class DashboardServer:
         }
 
     async def _send_response(self, writer: asyncio.StreamWriter, status_code: int, content_type: str, body: bytes) -> None:
-        status_texts = {200: "OK", 401: "Unauthorized", 404: "Not Found", 413: "Payload Too Large", 500: "Internal Server Error"}
+        status_texts = {200: "OK", 401: "Unauthorized", 404: "Not Found", 413: "Payload Too Large", 500: "Internal Server Error", 501: "Not Implemented"}
         header = (
             f"HTTP/1.1 {status_code} {status_texts.get(status_code, 'OK')}\r\n"
             f"Content-Type: {content_type}\r\n"

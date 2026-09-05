@@ -42,14 +42,13 @@ def _resolve_storage_mode(raw_uri: Optional[str]) -> tuple[StorageMode, str]:
     if clean_uri.startswith("sqlite"):
         return StorageMode.SQLITE, clean_uri
 
-    if "postgres://" in clean_uri:
+    if clean_uri.startswith("postgres://"):
         clean_uri = clean_uri.replace("postgres://", "postgresql://", 1)
 
-    if clean_uri.startswith("postgresql://"):
+    if clean_uri.startswith(("postgresql://", "postgresql+psycopg2://")):
         return StorageMode.POSTGRESQL, clean_uri
 
-    # Unrecognized or non-database URI fallback to SQLite
-    return StorageMode.SQLITE, "sqlite:///aetheris.db"
+    raise ValueError("Unsupported configured database URI; refusing to select another database.")
 
 
 def start() -> scoped_session:
@@ -70,6 +69,7 @@ def start() -> scoped_session:
     last_err = None
 
     for attempt in range(1, max_attempts + 1):
+        candidate_engine = None
         try:
             candidate_engine = create_engine(db_uri, connect_args=connect_args)
             # Verify connectivity immediately with a ping before setting global state
@@ -81,8 +81,10 @@ def start() -> scoped_session:
             SESSION = scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
             return SESSION
         except Exception as exc:
+            if candidate_engine is not None:
+                candidate_engine.dispose()
             last_err = exc
-            LOGS.warning("Database connection attempt %d/%d failed: %s", attempt, max_attempts, exc)
+            LOGS.warning("Database connection attempt %d/%d failed (%s)", attempt, max_attempts, type(exc).__name__)
             if attempt < max_attempts:
                 time.sleep(1.0)
 
@@ -90,15 +92,15 @@ def start() -> scoped_session:
     # Silent failover creates split-brain state when PostgreSQL recovers.
     if STORAGE_MODE == StorageMode.POSTGRESQL:
         err_msg = (
-            f"Configured PostgreSQL database is unreachable after {max_attempts} attempts: {last_err}. "
+            f"Configured PostgreSQL database is unreachable after {max_attempts} attempts. "
             "To prevent split-brain state loss, Aetheris V5 strictly refuses to silently switch to SQLite. "
             "Verify your PostgreSQL connection or remove DB_URI to explicitly run in SQLite mode."
         )
         LOGS.critical(err_msg)
-        raise RuntimeError(err_msg)
+        raise RuntimeError(err_msg) from None
 
     # SQLite fallback error (e.g. disk permission issue)
-    raise RuntimeError(f"Failed to initialize SQLite database '{db_uri}': {last_err}")
+    raise RuntimeError("Failed to initialize the configured SQLite database; persistent storage is required.") from None
 
 
 def check_connection() -> bool:
@@ -124,16 +126,5 @@ def reconnect() -> bool:
         return False
 
 
-# Initialize authoritative session at import
-try:
-    SESSION = start()
-except Exception as e:
-    LOGS.error("Fatal database initialization error: %s", e)
-    # If explicit SQLite fails, provide a memory-based failover for testing/emergency diagnostics only
-    if STORAGE_MODE == StorageMode.SQLITE:
-        ENGINE = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
-        BASE.metadata.bind = ENGINE
-        BASE.metadata.create_all(ENGINE)
-        SESSION = scoped_session(sessionmaker(bind=ENGINE, autoflush=False))
-    else:
-        raise
+# A failed authoritative database must stop startup, including SQLite failures.
+SESSION = start()

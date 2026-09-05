@@ -116,9 +116,12 @@ class JobSupervisor:
         self._queue: Optional[asyncio.PriorityQueue] = None
         self._workers: List[asyncio.Task] = []
         self._running = False
+        self._stopping = False
         self._lock: Optional[asyncio.Lock] = None
 
     async def start(self) -> None:
+        if self._stopping:
+            raise RuntimeError("JobSupervisor is stopping")
         if self._running:
             return
         self._running = True
@@ -140,15 +143,20 @@ class JobSupervisor:
         LOGS.info("JobSupervisor started with %d parallel execution workers", self.max_concurrent)
 
     async def stop(self) -> None:
+        self._stopping = True
         self._running = False
         for job in list(self._jobs.values()):
-            if job.status in {JobState.QUEUED, JobState.RUNNING, JobState.PAUSED}:
+            if job.status not in {JobState.COMPLETED, JobState.FAILED, JobState.CANCELLED}:
                 await self.cancel_job(job.job_id)
 
-        for w in self._workers:
+        workers = list(self._workers)
+        tasks = [j.task for j in self._jobs.values() if j.task and not j.task.done()]
+        for w in workers:
             w.cancel()
+        await asyncio.gather(*workers, *tasks, return_exceptions=True)
         self._workers.clear()
         self._queue = None
+        self._stopping = False
         LOGS.info("JobSupervisor stopped")
 
     async def submit(
@@ -162,6 +170,8 @@ class JobSupervisor:
         metadata: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> JobRecord:
+        if self._stopping:
+            raise RuntimeError("JobSupervisor is stopping")
         job_id = f"job-{uuid.uuid4().hex[:8]}"
         record = JobRecord(
             job_id=job_id,
@@ -212,13 +222,12 @@ class JobSupervisor:
             await record.pause_event.wait()
             try:
                 sig = inspect.signature(record.coro_fn)
-                params = list(sig.parameters.values())
-                if params and params[0].name in {"token", "cancellation_token", "cancel_token"}:
-                    return await record.coro_fn(token, *record.args, **record.kwargs)
-                else:
-                    return await record.coro_fn(record, *record.args, **record.kwargs)
-            except Exception:
-                return await record.coro_fn(token, *record.args, **record.kwargs)
+            except (ValueError, TypeError):
+                sig = None
+            params = list(sig.parameters.values()) if sig else []
+            context = token if not params or params[0].name in {"token", "cancellation_token", "cancel_token"} else record
+            # Exceptions from the job itself must never cause a second invocation.
+            return await record.coro_fn(context, *record.args, **record.kwargs)
 
         task = asyncio.create_task(_run())
         record.task = task
@@ -245,6 +254,7 @@ class JobSupervisor:
             LOGS.exception("Job %s failed with exception: %s", record.job_id, e)
         finally:
             record.completed_at = time.time()
+            self.prune_completed_jobs()
 
     async def cancel_job(self, job_id: str) -> bool:
         record = self._jobs.get(job_id)

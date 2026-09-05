@@ -66,11 +66,20 @@ class TaskManager:
         self._tasks[task_id] = tracked
 
         def _cleanup(fut):
-            # Auto-cleanup after task completion
-            pass
+            # Retrieve failures and bound retained task/traceback references.
+            if not fut.cancelled():
+                fut.exception()
+            self.purge_finished()
 
         async_task.add_done_callback(_cleanup)
         return tracked
+
+    async def stop(self):
+        tasks = [item.task for item in self._tasks.values() if not item.task.done()]
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
+        self.purge_finished()
 
     def cancel_task(self, task_id: int) -> bool:
         if task_id in self._tasks:

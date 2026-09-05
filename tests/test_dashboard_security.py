@@ -102,5 +102,22 @@ async def test_dashboard_security_and_auth():
         status, _ = await send_raw(req_oversized)
         assert status == 413
 
+        status, _ = await send_raw(
+            f"POST /api/plugins/reload HTTP/1.1\r\nAuthorization: Bearer {token}\r\n\r\n".encode()
+        )
+        assert status == 501
+        status, _ = await send_raw(
+            b"GET / HTTP/1.1\r\n" + b"X-Probe: " + b"a" * 17000 + b"\r\n\r\n"
+        )
+        assert status == 413
+
+        idle_reader, idle_writer = await asyncio.open_connection("127.0.0.1", port)
+        await asyncio.sleep(0)
+        await server.stop()
+        assert await asyncio.wait_for(idle_reader.read(), 1) == b""
+        idle_writer.close()
+        await idle_writer.wait_closed()
+        assert not server._connections
+
     finally:
         await server.stop()

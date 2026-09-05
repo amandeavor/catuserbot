@@ -23,10 +23,7 @@ class Globals(BASE):
         self.value = value
 
 
-try:
-    Globals.__table__.create(bind=ENGINE, checkfirst=True)
-except Exception:
-    pass
+Globals.__table__.create(bind=ENGINE, checkfirst=True)
 
 # Thread-safe in-memory cache to eliminate event loop blocking on high-frequency reads
 _CACHE: Dict[str, Tuple[Optional[str], float]] = {}
@@ -56,7 +53,8 @@ def gvarstatus(variable: str) -> Optional[str]:
         if row:
             val = row.value
     except Exception:
-        val = None
+        SESSION.rollback()
+        raise
     finally:
         SESSION.close()
 
@@ -72,8 +70,8 @@ def addgvar(variable: str, value: Any) -> None:
     val_str = str(value) if value is not None else ""
 
     try:
-        if SESSION.query(Globals).filter(Globals.variable == var_str).one_or_none():
-            delgvar(var_str)
+        # Delete and replace in ONE transaction. A failed insert must preserve the old value.
+        SESSION.query(Globals).filter(Globals.variable == var_str).delete(synchronize_session="fetch")
         adder = Globals(var_str, val_str)
         SESSION.add(adder)
         SESSION.commit()
@@ -102,6 +100,7 @@ def delgvar(variable: str) -> bool:
         deleted = bool(rem)
     except Exception:
         SESSION.rollback()
+        raise
     finally:
         SESSION.close()
 

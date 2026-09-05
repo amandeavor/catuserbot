@@ -3,11 +3,10 @@
 # Licensed under the GNU Affero General Public License v3.0
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-import contextlib
+import asyncio
 import os
+import signal
 import sys
-import threading
-from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import userbot
 from userbot import BOTLOG_CHATID, PM_LOGGER_GROUP_ID
@@ -17,6 +16,8 @@ from telethon import events
 from userbot.core.callbacks import secure_callbacks
 from userbot.core.jobs.supervisor import job_supervisor
 from userbot.core.web import dashboard
+from userbot.core.health import HealthServer
+from userbot.core.tasks import task_manager
 
 from .Config import Config
 from .core.logger import logging
@@ -36,46 +37,7 @@ LOGS.info(userbot.__copyright__)
 LOGS.info(f"Licensed under the terms of the {userbot.__license__}")
 
 
-class HealthCheckHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/plain")
-        self.end_headers()
-        self.wfile.write(b"Aetheris Userbot is online and healthy!")
-
-    def do_HEAD(self):
-        self.send_response(200)
-        self.end_headers()
-
-    def log_message(self, format, *args):
-        pass
-
-
-def start_health_server():
-    try:
-        raw_port = os.environ.get("PORT", "8080")
-        try:
-            port = int(str(raw_port).strip())
-        except (ValueError, TypeError):
-            port = 8080
-        server = HTTPServer(("0.0.0.0", port), HealthCheckHandler)
-        LOGS.info(f"Aetheris health check daemon active on port {port}")
-        server.serve_forever()
-    except Exception as e:
-        LOGS.warning(f"Could not start background health server: {e}")
-
-
-threading.Thread(target=start_health_server, daemon=True).start()
-
 cmdhr = Config.COMMAND_HAND_LER
-
-try:
-    LOGS.info("Starting Aetheris Userbot Engine...")
-    catub.loop.run_until_complete(setup_bot())
-    LOGS.info("Aetheris Bot Startup Completed")
-except Exception as e:
-    LOGS.error(f"Startup Failure: {e}")
-    sys.exit()
 
 
 async def startup_process():
@@ -127,11 +89,66 @@ async def externalrepo():
         await catub.tgbot.send_message(BOTLOG_CHATID, string, parse_mode="html")
 
 
-catub.loop.run_until_complete(startup_process())
-catub.loop.run_until_complete(externalrepo())
+async def main():
+    ready = False
+    health = HealthServer(
+        lambda: ready and catub.is_connected() and catub.tgbot.is_connected(),
+        port=int(os.environ.get("PORT", "8080")),
+    )
+    try:
+        await health.start()
+        LOGS.info("Starting Aetheris Userbot Engine...")
+        await setup_bot()
+        await startup_process()
+        await externalrepo()
+        ready = True
+        if len(sys.argv) in {1, 3, 4}:
+            await catub.run_until_disconnected()
+    finally:
+        ready = False
+        # A failure in one cleanup must not skip the other owned services.
+        for name, close in (
+            ("health", health.stop),
+            ("dashboard", dashboard.stop),
+            ("jobs", job_supervisor.stop),
+            ("legacy tasks", task_manager.stop),
+            ("assistant", catub.tgbot.disconnect),
+            ("user client", catub.disconnect),
+        ):
+            try:
+                await close()
+            except Exception:
+                LOGS.exception("Could not close %s", name)
+        from userbot import sql_helper
+        try:
+            sql_helper.SESSION.remove()
+        finally:
+            if sql_helper.ENGINE is not None:
+                sql_helper.ENGINE.dispose()
 
-if len(sys.argv) in {1, 3, 4}:
-    with contextlib.suppress(ConnectionError):
-        catub.run_until_disconnected()
-else:
-    catub.disconnect()
+
+def run():
+    loop = catub.loop
+    task = loop.create_task(main())
+    requested = False
+
+    def request_stop(*_):
+        nonlocal requested
+        if not requested:
+            requested = True
+            loop.call_soon_threadsafe(task.cancel)
+
+    previous = {sig: signal.signal(sig, request_stop)
+                for sig in (signal.SIGINT, signal.SIGTERM)}
+    try:
+        loop.run_until_complete(task)
+    except asyncio.CancelledError:
+        if not requested:
+            raise
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
+
+
+if __name__ == "__main__":
+    run()
