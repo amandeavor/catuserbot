@@ -35,6 +35,7 @@ ENV = bool(os.environ.get("ENV", False))
 LOGS = logging.getLogger("CatUBStartUP")
 cmdhr = Config.COMMAND_HAND_LER
 
+VPS_NOLOAD = []
 if ENV:
     VPS_NOLOAD = ["vps"]
 elif os.path.exists("config.py"):
@@ -205,11 +206,10 @@ async def load_plugins(folder, extfolder=None):
                             if check > 5:
                                 break
                 else:
-                    os.remove(Path(f"{plugin_path}/{shortname}.py"))
+                    LOGS.info("Skipping disabled plugin %s", shortname)
             except Exception as e:
                 if shortname not in failure:
                     failure.append(shortname)
-                os.remove(Path(f"{plugin_path}/{shortname}.py"))
                 LOGS.info(
                     f"unable to load {shortname} because of error {e}\nBase Folder {plugin_path}"
                 )
