@@ -17,7 +17,11 @@ from pathlib import Path
 
 from telethon import Button, types
 from telethon.events import CallbackQuery, InlineQuery
-from youtubesearchpython import VideosSearch
+
+try:
+    from youtubesearchpython import VideosSearch
+except ImportError:
+    VideosSearch = None
 
 from userbot import catub
 
@@ -35,6 +39,7 @@ from ..plugins import mention
 from ..sql_helper.globals import gvarstatus
 from . import CMD_INFO, GRP_INFO, PLG_INFO, check_owner
 from .cmdinfo import cmdinfo, get_key, getkey, plugininfo
+from .inline_menu import build_home_menu, register_inline_menu_handlers
 from .logger import logging
 
 LOGS = logging.getLogger(__name__)
@@ -49,42 +54,8 @@ def get_thumb(name=None, url=None):
     )
 
 
-def main_menu():
-    text = f"◈ ─── **A E T H E R I S  C O N T R O L** ─── ◈\
-        \n👤 **Master :** {mention}\
-        \nSelect a module category below to view commands:"
-    buttons = [
-        (Button.inline("ℹ️ Info", data="check"),),
-        (
-            Button.inline(f"👮‍♂️ Admin ({len(GRP_INFO['admin'])})", data="admin_menu"),
-            Button.inline(f"🤖 Bot ({len(GRP_INFO['bot'])})", data="bot_menu"),
-        ),
-        (
-            Button.inline(f"🎨 Fun ({len(GRP_INFO['fun'])})", data="fun_menu"),
-            Button.inline(f"🧩 Misc ({len(GRP_INFO['misc'])})", data="misc_menu"),
-        ),
-        (
-            Button.inline(f"🧰 Tools ({len(GRP_INFO['tools'])})", data="tools_menu"),
-            Button.inline(f"🗂 Utils ({len(GRP_INFO['utils'])})", data="utils_menu"),
-        ),
-        (
-            Button.inline(f"➕ Extra ({len(GRP_INFO['extra'])})", data="extra_menu"),
-            Button.inline("🔒 Close Menu", data="close"),
-        ),
-    ]
-    if Config.BADCAT:
-        switch_button = [
-            (
-                Button.inline(f"➕ Extra ({len(GRP_INFO['extra'])})", data="extra_menu"),
-                Button.inline(
-                    f"⚰️ Useless ({len(GRP_INFO['useless'])})", data="useless_menu"
-                ),
-            ),
-            (Button.inline("🔒 Close Menu", data="close"),),
-        ]
-        buttons = buttons[:-1] + switch_button
-
-    return text, buttons
+def main_menu(sender_id=None):
+    return build_home_menu(sender_id)
 
 
 async def build_article(
@@ -130,14 +101,15 @@ async def build_article(
 
 
 async def help_article(event):
-    help_info = main_menu()
+    sender_id = getattr(event.query, "user_id", None)
+    text, buttons = build_home_menu(sender_id)
     return await build_article(
         event,
-        title="Help Menu",
-        description="Help menu for CatUserbot.",
+        title="Aetheris Control",
+        description="Interactive control hub for Aetheris Userbot.",
         thumbnail=get_thumb("help.png"),
-        text=help_info[0],
-        buttons=help_info[1],
+        text=text,
+        buttons=buttons,
     )
 
 
@@ -461,16 +433,17 @@ async def inline_handler(event):
                 json.dump(new_msg, open(old_msg, "w"))
         elif string == "help":
             result = await help_article(event)
-            await event.answer([result] if result else None)
+            await event.answer([result] if result else None, cache_time=0)
         elif string == "spotify":
             result = await article_builder(event, string)
             await event.answer([result] if result else None)
         elif string == "vcplayer":
             result = await vcplayer_article(event)
             await event.answer([result] if result else None)
-        elif str_y[0].lower() == "s" and len(str_y) == 2:
-            result = await inline_search(event, str_y[1].strip())
-            await event.answer(result or None)
+        elif str_y[0].lower() == "s":
+            query_str = str_y[1].strip() if len(str_y) > 1 else ""
+            result = await inline_search(event, query_str)
+            await event.answer(result or [], cache_time=0)
         elif str_y[0].lower() == "ytdl" and len(str_y) == 2:
             result = await youtube_data_article(event, str_y)
             await event.answer([result] if result else None)
@@ -492,6 +465,14 @@ async def youtube_data_article(event, str_y):
     link = get_yt_video_id(str_y[1].strip())
     found_ = True
     if link is None:
+        if VideosSearch is None:
+            return await build_article(
+                event,
+                title="YouTube Search Unavailable",
+                description="Optional dependency 'youtube-search-python' is not installed.",
+                text="**◈ YOUTUBE SEARCH UNAVAILABLE ◈**\n\nThe optional dependency `youtube-search-python` is not installed in this environment.\nTo search videos by title, install it via `pip install youtube-search-python`, or paste a direct YouTube video link.",
+                thumbnail=get_thumb("youtube.png"),
+            )
         search = VideosSearch(str_y[1].strip(), limit=15)
         resp = (search.result()).get("result")
         if len(resp) == 0:
@@ -762,7 +743,10 @@ async def on_plug_in_callback_query_handler(event):
 @catub.tgbot.on(CallbackQuery(data=re.compile(rb"mainmenu")))
 @check_owner
 async def on_plug_in_callback_query_handler(event):
-    _result = main_menu()
+    sender_id = getattr(event, "sender_id", None)
+    if sender_id is None and hasattr(event, "query"):
+        sender_id = getattr(event.query, "user_id", None)
+    _result = main_menu(sender_id)
     await event.edit(_result[0], buttons=_result[1])
 
 
@@ -856,35 +840,97 @@ async def on_plug_in_callback_query_handler(event):
 async def inline_search(event, query):
     answers = []
     builder = event.builder
-    if found := [i for i in sorted(list(CMD_INFO)) if query in i]:
-        for cmd in found:
-            title = f"Command:  {cmd}"
-            plugin = get_key(cmd)
-            try:
-                info = CMD_INFO[cmd][1]
-            except IndexError:
-                info = "None"
-            description = f"Plugin:  {plugin} \nCategory:  {getkey(plugin)}\n{info}"
-            text = await cmdinfo(cmd, event)
-            result = builder.article(
-                title=title,
-                description=description,
-                thumb=get_thumb("plugin_cmd.jpg"),
-                text=text,
-            )
-            answers.append(result)
+    cmdprefix = Config.COMMAND_HAND_LER or "."
 
-    if found := [i for i in sorted(list(PLG_INFO.keys())) if query in i]:
-        for plugin in found:
-            count = len(PLG_INFO[plugin])
-            if count > 1:
-                title = f"Plugin:  {plugin}"
-                text = await plugininfo(plugin, event, "-p")
-                result = builder.article(
-                    title=title,
-                    description=f"Category:  {getkey(plugin)}\nTotal Cmd: {count}",
-                    thumb=get_thumb("plugin.jpg"),
-                    text=text,
-                )
-                answers.append(result)
+    # Strip redundant leading 's ' if user inadvertently typed it again
+    query = query.strip()
+    if query.lower().startswith("s "):
+        query = query[2:].strip()
+
+    # 1. Empty query prompt (user tapped Search button and has not typed keyword yet)
+    if not query:
+        prompt_text = (
+            "**◈ AETHERIS COMMAND SEARCH ◈**\n\n"
+            "Type a command or plugin keyword directly to search all commands and view full documentation.\n\n"
+            f"• **Examples:** `ping`, `alive`, `autoprofile`\n"
+            f"• **Prefix:** `{cmdprefix}`\n"
+            "Tap any result to view its syntax and options."
+        )
+        return [
+            builder.article(
+                title="🔍 Search Commands & Plugins",
+                description="Type a keyword directly (e.g. 'alive', 'ping', 'admin')",
+                thumb=get_thumb("search.jpg"),
+                text=prompt_text,
+            )
+        ]
+
+    # 2. Search matching commands (case-insensitive, capped at 30)
+    query_lower = query.lower()
+    found_cmds = [i for i in sorted(list(CMD_INFO)) if query_lower in i.lower()]
+    for cmd in found_cmds[:30]:
+        plugin = get_key(cmd) or "core"
+        category = getkey(plugin) or "tools"
+        try:
+            info = CMD_INFO[cmd][1] if len(CMD_INFO[cmd]) > 1 else ""
+        except Exception:
+            info = ""
+
+        about_raw = CMD_INFO[cmd][0] if len(CMD_INFO[cmd]) > 0 else ""
+        body_text = str(about_raw).replace("{tr}", cmdprefix)
+
+        card_text = (
+            f"**◈ COMMAND: `{cmdprefix}{cmd}` ◈**\n"
+            f"• **Plugin:** `{plugin}` • **Category:** `{category.capitalize()}`\n\n"
+            f"{body_text}"
+        )
+
+        answers.append(
+            builder.article(
+                title=f"Command: {cmdprefix}{cmd}",
+                description=f"Plugin: {plugin} ({category.capitalize()}) | {str(info)[:45]}",
+                thumb=get_thumb("plugin_cmd.jpg"),
+                text=card_text,
+            )
+        )
+
+    # 3. Search matching plugins (capped at 15)
+    found_plgs = [p for p in sorted(list(PLG_INFO.keys())) if query_lower in p.lower()]
+    for plugin in found_plgs[:15]:
+        cmds = PLG_INFO.get(plugin, [])
+        category = getkey(plugin) or "tools"
+        plg_text = (
+            f"**◈ PLUGIN: `{plugin.upper()}` ◈**\n"
+            f"• **Category:** `{category.capitalize()}` • **Total Commands:** `{len(cmds)}`\n\n"
+        )
+        for c in cmds[:25]:
+            plg_text += f"• `{cmdprefix}{c}`\n"
+        if len(cmds) > 25:
+            plg_text += f"...and {len(cmds) - 25} more commands.\n"
+        plg_text += f"\nUse `{cmdprefix}help {plugin}` to inspect in chat."
+
+        answers.append(
+            builder.article(
+                title=f"Plugin: {plugin}",
+                description=f"Category: {category.capitalize()} | {len(cmds)} commands",
+                thumb=get_thumb("plugin.jpg"),
+                text=plg_text,
+            )
+        )
+
+    # 4. Informative empty state if nothing matched
+    if not answers:
+        answers.append(
+            builder.article(
+                title=f"No results for '{query}'",
+                description="No matching commands or plugins found in Aetheris.",
+                thumb=get_thumb("help.png"),
+                text=(
+                    f"**◈ SEARCH: No Matches ◈**\n\n"
+                    f"No command or plugin matching `{query}` was found.\n"
+                    f"Use `{cmdprefix}cmds` or browse categories via `{cmdprefix}menu`."
+                ),
+            )
+        )
+
     return answers

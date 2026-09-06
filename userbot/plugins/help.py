@@ -66,6 +66,23 @@ async def _(event):
 
 
 @catub.cat_cmd(
+    pattern="menu$",
+    command=("menu", plugin_category),
+    info={
+        "header": "To open interactive Aetheris inline control hub.",
+        "description": "Opens the Telegram-native inline dashboard for browsing commands, configuring settings, and monitoring active tasks.",
+        "usage": "{tr}menu",
+    },
+)
+async def menu_cmd(event):
+    "To open the interactive Aetheris inline control hub."
+    reply_to_id = await reply_id(event)
+    results = await event.client.inline_query(Config.TG_BOT_USERNAME, "help")
+    await results[0].click(event.chat_id, reply_to=reply_to_id, hide_via=True)
+    await event.delete()
+
+
+@catub.cat_cmd(
     pattern="cmds(?:\s|$)([\s\S]*)",
     command=("cmds", plugin_category),
     info={

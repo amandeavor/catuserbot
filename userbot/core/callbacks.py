@@ -35,6 +35,7 @@ class SecureCallbackManager:
         self._tokens: Dict[str, CallbackToken] = {}
         self._handlers: Dict[str, Callable[[Any, CallbackToken], Coroutine[Any, Any, None]]] = {}
         self._lock = asyncio.Lock()
+        self._inflight: Set[str] = set()
 
     def register_handler(
         self, action: str, handler: Callable[[Any, CallbackToken], Coroutine[Any, Any, None]]
@@ -75,6 +76,14 @@ class SecureCallbackManager:
         expired_keys = [k for k, tok in self._tokens.items() if tok.expires_at < now]
         for k in expired_keys:
             self._tokens.pop(k, None)
+
+        # Bound token storage to prevent unbounded memory growth
+        max_retained = 2000
+        if len(self._tokens) > max_retained:
+            sorted_keys = sorted(self._tokens.keys(), key=lambda k: self._tokens[k].created_at)
+            to_remove = len(self._tokens) - max_retained
+            for k in sorted_keys[:to_remove]:
+                self._tokens.pop(k, None)
 
     async def handle_callback_query(self, event: Any) -> bool:
         """
@@ -126,6 +135,14 @@ class SecureCallbackManager:
                 pass
             return True
 
+        # Debounce: prevent duplicate concurrent taps from repeating actions
+        if data_str in self._inflight:
+            try:
+                await event.answer("⏳ Processing... please wait.", alert=False)
+            except Exception:
+                pass
+            return True
+
         # If single-use, remove token
         if token_obj.single_use:
             async with self._lock:
@@ -140,6 +157,7 @@ class SecureCallbackManager:
                 pass
             return True
 
+        self._inflight.add(data_str)
         try:
             await handler(event, token_obj)
         except Exception as err:
@@ -148,6 +166,8 @@ class SecureCallbackManager:
                 await event.answer(f"❌ Execution error: {err}", alert=True)
             except Exception:
                 pass
+        finally:
+            self._inflight.discard(data_str)
 
         return True
 
