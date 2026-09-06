@@ -7,6 +7,14 @@ from unittest.mock import AsyncMock, Mock
 import pytest
 
 
+def test_readiness_rejects_missing_essential_commands():
+    app = importlib.import_module("userbot.__main__")
+    report = SimpleNamespace(loaded=["ping"])
+    with pytest.raises(RuntimeError, match="alive"):
+        app.require_core_plugins(report)
+    app.require_core_plugins(SimpleNamespace(loaded=["alive", "ping"]))
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("failure", [True, False])
 async def test_main_closes_owned_resources_on_startup_failure_or_cancel(monkeypatch, failure):

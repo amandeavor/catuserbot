@@ -40,6 +40,14 @@ LOGS.info(f"Licensed under the terms of the {userbot.__license__}")
 cmdhr = Config.COMMAND_HAND_LER
 
 
+def require_core_plugins(report, required=("alive", "ping")):
+    missing = sorted(set(required) - set(report.loaded))
+    if missing:
+        raise RuntimeError(
+            "Essential command plugins failed to load: " + ", ".join(missing)
+        )
+
+
 async def startup_process():
     await job_supervisor.start()
     try:
@@ -55,11 +63,15 @@ async def startup_process():
         LOGS.warning(f"Dashboard startup skipped: {dash_err}")
 
     await verifyLoggerGroup()
-    await load_plugins("plugins")
-    await load_plugins("assistant")
+    command_report = await load_plugins("plugins")
+    assistant_report = await load_plugins("assistant")
+    require_core_plugins(command_report)
     LOGS.info("============================================================================")
     LOGS.info("||             ◈ A E T H E R I S  U S E R B O T  v5.0 ◈                   ||")
-    LOGS.info("||               MTProto Automation Core Online & Operational             ||")
+    LOGS.info(
+        "||       Core ready: %d command plugins, %d assistant plugins loaded       ||",
+        command_report.success, assistant_report.success,
+    )
     LOGS.info(f"||         Type {cmdhr}alive or {cmdhr}ping to verify your live instance        ||")
     LOGS.info("============================================================================")
     await verifyLoggerGroup()

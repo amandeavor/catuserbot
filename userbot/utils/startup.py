@@ -11,6 +11,7 @@ import glob
 import os
 import sys
 import urllib.request
+from dataclasses import dataclass, field
 from datetime import timedelta
 from pathlib import Path
 
@@ -40,6 +41,25 @@ if ENV:
     VPS_NOLOAD = ["vps"]
 elif os.path.exists("config.py"):
     VPS_NOLOAD = ["heroku"]
+
+
+@dataclass
+class PluginLoadReport:
+    """One startup generation's real import outcome."""
+
+    folder: str
+    loaded: list[str] = field(default_factory=list)
+    failed: dict[str, str] = field(default_factory=dict)
+    skipped: list[str] = field(default_factory=list)
+
+    @property
+    def success(self):
+        return len(self.loaded)
+
+    # Preserve the external-repository helper's historical tuple unpacking.
+    def __iter__(self):
+        yield self.success
+        yield list(self.failed) or ["None"]
 
 
 async def setup_bot():
@@ -175,13 +195,14 @@ async def load_plugins(folder, extfolder=None):
         plugin_path = f"userbot/{folder}"
     files = glob.glob(path)
     files.sort()
-    success = 0
-    failure = []
+    report = PluginLoadReport(folder=plugin_path)
     for name in files:
         with open(name) as f:
             path1 = Path(f.name)
             shortname = path1.stem
             pluginname = shortname.replace(".py", "")
+            if pluginname == "__init__":
+                continue
             try:
                 if (pluginname not in Config.NO_LOAD) and (
                     pluginname not in VPS_NOLOAD
@@ -194,29 +215,31 @@ async def load_plugins(folder, extfolder=None):
                                 pluginname,
                                 plugin_path=plugin_path,
                             )
-                            if shortname in failure:
-                                failure.remove(shortname)
-                            success += 1
+                            report.failed.pop(shortname, None)
+                            report.loaded.append(shortname)
                             break
                         except ModuleNotFoundError as e:
                             install_pip(e.name)
                             check += 1
-                            if shortname not in failure:
-                                failure.append(shortname)
+                            report.failed[shortname] = f"missing dependency: {e.name}"
                             if check > 5:
                                 break
                 else:
+                    report.skipped.append(shortname)
                     LOGS.info("Skipping disabled plugin %s", shortname)
             except Exception as e:
-                if shortname not in failure:
-                    failure.append(shortname)
-                LOGS.info(
-                    f"unable to load {shortname} because of error {e}\nBase Folder {plugin_path}"
+                report.failed[shortname] = f"{type(e).__name__}: {e}"
+                LOGS.error(
+                    "Unable to load %s from %s: %s: %s",
+                    shortname, plugin_path, type(e).__name__, e,
                 )
-    if extfolder:
-        if not failure:
-            failure.append("None")
-        return success, failure
+    LOGS.info(
+        "Plugin load summary for %s: loaded=%d failed=%d skipped=%d",
+        plugin_path, report.success, len(report.failed), len(report.skipped),
+    )
+    if report.failed:
+        LOGS.warning("Failed plugins in %s: %s", plugin_path, ", ".join(report.failed))
+    return report
 
 
 async def verifyLoggerGroup():

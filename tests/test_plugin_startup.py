@@ -20,8 +20,10 @@ async def test_environment_only_startup_loads_commands_without_env_flag(monkeypa
     load = Mock()
     monkeypatch.setattr(startup, "load_module", load)
     monkeypatch.setattr(startup.Config, "NO_LOAD", [])
-    await startup.load_plugins("plugins")
+    report = await startup.load_plugins("plugins")
     load.assert_called_once_with("alive", plugin_path="userbot/plugins")
+    assert report.loaded == ["alive"]
+    assert not report.failed
     assert source.exists()
 
 
@@ -37,5 +39,22 @@ async def test_skipped_or_failed_plugin_is_never_deleted(monkeypatch, tmp_path, 
     monkeypatch.setattr(startup, "VPS_NOLOAD", [], raising=False)
     monkeypatch.setattr(startup.Config, "NO_LOAD", ["alive"] if disabled else [])
     monkeypatch.setattr(startup, "load_module", Mock(side_effect=RuntimeError("temporary import failure")))
-    await startup.load_plugins("plugins")
+    report = await startup.load_plugins("plugins")
     assert source.read_text() == "# harmless fixture\n"
+    assert (report.skipped == ["alive"]) if disabled else ("alive" in report.failed)
+
+
+@pytest.mark.asyncio
+async def test_package_initializer_is_not_counted_as_plugin(monkeypatch, tmp_path):
+    from userbot.utils import startup
+    monkeypatch.chdir(tmp_path)
+    folder = tmp_path / "userbot/plugins"
+    folder.mkdir(parents=True)
+    (folder / "__init__.py").write_text("raise RuntimeError('must not execute')\n")
+    monkeypatch.setattr(startup, "VPS_NOLOAD", [], raising=False)
+    monkeypatch.setattr(startup.Config, "NO_LOAD", [])
+    load = Mock()
+    monkeypatch.setattr(startup, "load_module", load)
+    report = await startup.load_plugins("plugins")
+    load.assert_not_called()
+    assert report.success == 0
